@@ -338,6 +338,22 @@ function updateConfig(src, ~, handles)
         handles.config = config;
         handles.results_folder = config.output_folder;
         
+        % 检查模型类型是否发生变化，如果变化则更新信号列表
+        if isfield(handles, 'previous_model_type')
+            if ~strcmp(handles.previous_model_type, model_type)
+                % 模型类型发生变化，更新信号列表
+                if isfield(handles, 'signalList')
+                    gui_utils('updateSignalList', model_type, handles);
+                end
+            end
+        else
+            % 第一次设置，也更新信号列表
+            if isfield(handles, 'signalList')
+                gui_utils('updateSignalList', model_type, handles);
+            end
+        end
+        handles.previous_model_type = model_type;
+        
         % 更新结果文件夹显示
         if isfield(handles, 'resultsFolderText')
             set(handles.resultsFolderText, 'String', config.output_folder);
@@ -375,6 +391,12 @@ function loadDefaultConfig(~, ~, handles)
         if isfield(handles, 'resultsFolderText')
             set(handles.resultsFolderText, 'String', config.output_folder);
         end
+        
+        % 更新信号列表为默认半车模型
+        if isfield(handles, 'signalList')
+            gui_utils('updateSignalList', 'half', handles);
+        end
+        handles.previous_model_type = 'half';
         
         gui_utils('addLog', handles, '已加载默认配置');
         set(handles.fig, 'UserData', handles);
@@ -428,6 +450,12 @@ function loadConfig(~, ~, handles)
             updateGUIFromConfig(handles);
             if isfield(handles, 'resultsFolderText')
                 set(handles.resultsFolderText, 'String', handles.config.output_folder);
+            end
+            
+            % 根据加载的配置更新信号列表
+            if isfield(handles, 'signalList') && isfield(handles.config, 'model_type')
+                gui_utils('updateSignalList', handles.config.model_type, handles);
+                handles.previous_model_type = handles.config.model_type;
             end
             
             gui_utils('addLog', handles, sprintf('配置已从 %s 加载', filename));

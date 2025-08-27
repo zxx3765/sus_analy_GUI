@@ -27,6 +27,10 @@ switch func_name
         if nargin >= 3
             addLog(varargin{2}, varargin{3});
         end
+    case 'updateSignalList'
+        if nargin >= 3
+            updateSignalListFromUtils(varargin{2}, varargin{3});
+        end
     case 'refreshResultsList'
         if nargin >= 2
             refreshResultsList(varargin{2});
@@ -455,4 +459,133 @@ function refreshResultsList(handles)
     end
     
     gui_utils('addLog', handles, sprintf('结果列表已刷新，找到 %d 个文件', length(files)));
+end
+
+%% 从工具函数更新信号列表
+function updateSignalListFromUtils(model_type, handles)
+%UPDATESIGNALLISTFROMUTILS 通过工具函数更新信号列表
+%
+% 输入:
+%   model_type - 模型类型 ('half' 或 'quarter')
+%   handles - GUI句柄结构体
+%
+% 功能:
+%   - 根据模型类型获取对应的信号列表
+%   - 更新GUI中的信号选择列表
+%   - 添加日志记录
+
+    if nargin < 2
+        warning('updateSignalListFromUtils: 参数不足');
+        return;
+    end
+    
+    % 检查handles是否有效
+    if ~isfield(handles, 'signalList')
+        return;
+    end
+    
+    try
+        % 获取handles（如果需要从UserData获取）
+        if isfield(handles, 'fig')
+            handles = get(handles.fig, 'UserData');
+        end
+        
+        % 检查是否有数据
+        if isempty(handles.data)
+            set(handles.signalList, 'String', {'(无可用信号)'});
+            set(handles.signalList, 'Enable', 'off');
+            return;
+        end
+        
+        % 启用信号列表
+        set(handles.signalList, 'Enable', 'on');
+        
+        % 根据模型类型获取信号列表
+        preset_signals = getSignalListByModelType(model_type);
+        
+        % 更新信号列表
+        set(handles.signalList, 'String', preset_signals);
+        set(handles.signalList, 'Value', []); % 清除当前选择
+        
+        % 添加日志
+        gui_utils('addLog', handles, sprintf('已更新%s模型信号列表，共 %d 个信号', ...
+            getModelTypeName(model_type), length(preset_signals)));
+        
+        % 保存handles（如果有fig字段）
+        if isfield(handles, 'fig')
+            set(handles.fig, 'UserData', handles);
+        end
+        
+    catch ME
+        warning('更新信号列表失败: %s', ME.message);
+    end
+end
+
+%% 根据模型类型获取信号列表（工具函数版本）
+function signals = getSignalListByModelType(model_type)
+    try
+        % 从配置文件获取信号定义
+        config = suspension_analysis_config(model_type);
+        
+        % 提取中文标签
+        signals = {};
+        for i = 1:length(config.analysis_signals)
+            signal_def = config.analysis_signals{i};
+            if length(signal_def) >= 4
+                signals{end+1} = signal_def{4}; % 中文标签
+            end
+        end
+        
+        if isempty(signals)
+            % 如果配置文件中没有信号，使用默认信号
+            signals = getDefaultSignals(model_type);
+        end
+        
+    catch ME
+        warning('获取信号配置失败: %s', ME.message);
+        % 使用默认信号列表
+        signals = getDefaultSignals(model_type);
+    end
+end
+
+%% 获取默认信号列表（工具函数版本）
+function signals = getDefaultSignals(model_type)
+    switch lower(model_type)
+        case 'half'
+            signals = {
+                '车身质心位移',
+                '车身质心速度',
+                '车身质心加速度',
+                '车身俯仰角',
+                '车身俯仰角速度',
+                '车身俯仰角加速度',
+                '前簧载质量加速度',
+                '后簧载质量加速度',
+                '前悬架动行程',
+                '后悬架动行程',
+                '前轮胎动变形',
+                '后轮胎动变形'
+            };
+        case 'quarter'
+            signals = {
+                '簧载质量加速度',
+                '非簧载质量加速度',
+                '悬架动行程',
+                '轮胎动变形'
+            };
+        otherwise
+            signals = {'(无可用信号)'};
+    end
+end
+
+%% 获取模型类型的中文名称（工具函数版本）
+function name = getModelTypeName(model_type)
+    switch lower(model_type)
+        case 'half'
+            name = '半车';
+        case 'quarter'
+            name = '四分之一车';
+        otherwise
+            name = '未知';
+    end
 end

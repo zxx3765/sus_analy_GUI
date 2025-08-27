@@ -105,31 +105,50 @@ end
 function config = set_quarter_car_config(config)
 
 % 数据字段映射配置
-config.data_fields.time = 'tout';
-config.data_fields.outputs = 'y_bus';      % 系统输出
-config.data_fields.road_input = 'xr';      % 路面输入
-config.data_fields.states = 'real_x_bus';  % 真实状态
+config.data_fields.time = 'tout';           % 时间数据
+config.data_fields.state_dot = 'state_dot'; % 状态导数 [5001×4]
+config.data_fields.state = 'state';         % 状态数据 [5001×6]
+config.data_fields.road_input = 'xr';       % 路面输入 [5001×1]
+config.data_fields.reward = 'reward';       % 奖励数据 [5001×1]
+config.data_fields.road_derivative = 'd_xr'; % 路面输入导数 [5001×1]
+config.data_fields.velocity_def = 'v_def';  % 速度缺陷 [5001×1]
 
-% 输出信号索引映射 (基于y_bus，四分之一车模型)
-config.signals.sprung_acc = 1;            % 簧载质量加速度
-config.signals.rel_vel = 2;               % 悬架相对速度
-config.signals.unsprung_acc = 3;          % 非簧载质量加速度
-config.signals.tire_force = 4;            % 轮胎力（如果有）
+% 状态导数信号索引映射 (基于state_dot [5001×4])
+config.signals.signal_1 = 1;                % 第1个状态导数信号
+config.signals.sprung_acc = 2;              % 第2个状态导数信号（簧载质量加速度）
+config.signals.signal_3 = 3;                % 第3个状态导数信号
+config.signals.unsprung_acc = 4;            % 第4个状态导数信号（非簧载质量加速度）
 
-% 状态信号索引映射
-config.states.tire_def = 1;               % 轮胎变形
-config.states.susp_def = 2;               % 悬架变形
+% 状态信号索引映射 (基于state [5001×6])
+config.states.state_1 = 1;                  % 第1个状态信号
+config.states.state_2 = 2;                  % 第2个状态信号
+config.states.state_3 = 3;                  % 第3个状态信号
+config.states.state_4 = 4;                  % 第4个状态信号
+config.states.susp_def = 5;                 % 第5个状态信号（悬架变形）
+config.states.tire_def = 6;                 % 第6个状态信号（轮胎变形）
 
-% 路面输入索引映射
-config.road.input = 1;                    % 路面输入
+% 其他单一信号索引映射
+config.road.input = 1;                      % 路面输入索引
+config.reward.total = 1;                    % 总奖励索引
+config.road_derivative.input = 1;           % 路面输入导数索引
+config.velocity_def.value = 1;              % 速度缺陷索引
 
-% 分析信号配置
+% 分析信号配置 - 根据实际数据结构
 config.analysis_signals = {
     % {信号名称, 数据来源, 索引, 中文标签, 英文标签, 单位}
-    {'sprung_acc', 'outputs', config.signals.sprung_acc, '簧载质量加速度', 'Sprung Mass Acceleration', 'm/s²'};
-    {'unsprung_acc', 'outputs', config.signals.unsprung_acc, '非簧载质量加速度', 'Unsprung Mass Acceleration', 'm/s²'};
-    {'susp_def', 'states', config.states.susp_def, '悬架动行程', 'Suspension Deflection', 'm'};
-    {'tire_def', 'states', config.states.tire_def, '轮胎动变形', 'Tire Deflection', 'm'};
+    
+    % 基于状态导数的信号 (state_dot)
+    {'sprung_acc', 'state_dot', config.signals.sprung_acc, '簧载质量加速度', 'Sprung Mass Acceleration', 'm/s²'};
+    {'unsprung_acc', 'state_dot', config.signals.unsprung_acc, '非簧载质量加速度', 'Unsprung Mass Acceleration', 'm/s²'};
+    
+    % 基于状态的信号 (state)
+    {'susp_def', 'state', config.states.susp_def, '悬架动行程', 'Suspension Deflection', 'm'};
+    {'tire_def', 'state', config.states.tire_def, '轮胎动变形', 'Tire Deflection', 'm'};
+    
+    % 单一信号
+    {'reward', 'reward', config.reward.total, '奖励信号', 'Reward Signal', ''};
+    {'road_input', 'road_input', config.road.input, '路面输入', 'Road Input', 'm'};
+    {'velocity_def', 'velocity_def', config.velocity_def.value, '速度缺陷', 'Velocity Defect', 'm/s'};
 };
 
 end

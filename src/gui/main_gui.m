@@ -28,11 +28,11 @@ handles.labels = {};        % 数据标签
 handles.config = [];        % 当前配置
 handles.results_folder = '';% 当前结果文件夹
 
+%% 初始化默认配置（在创建布局之前）
+initializeDefaultConfig(handles);
+
 %% 创建GUI布局
 handles = createMainLayout(handles);
-
-%% 初始化默认配置
-initializeDefaultConfig(handles);
 
 % 将handles存储到figure的UserData中
 set(fig, 'UserData', handles);

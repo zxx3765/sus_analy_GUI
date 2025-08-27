@@ -16,21 +16,13 @@ function handles = gui_signal_analysis(parent, handles)
 % 输出:  
 %   handles - 更新后的句柄结构体
 
-    % 预设信号列表
-    preset_signals = {
-        '车身质心位移',
-        '车身质心速度',
-        '车身质心加速度',
-        '车身俯仰角',
-        '车身俯仰角速度',
-        '车身俯仰角加速度',
-        '前簧载质量加速度',
-        '后簧载质量加速度',
-        '前悬架动行程',
-        '后悬架动行程',
-        '前轮胎动变形',
-        '后轮胎动变形'
-    };
+    % 根据模型类型获取信号列表
+    if isfield(handles, 'config') && isfield(handles.config, 'model_type')
+        model_type = handles.config.model_type;
+    else
+        model_type = 'half'; % 默认
+    end
+    preset_signals = getSignalListByModelType(model_type);
     
     % 信号选择面板 - 重新设计布局，包含分析控制
     signalPanel = uipanel('Parent', parent, ...
@@ -263,8 +255,6 @@ function runAnalysis(~, ~, handles)
                         % 检查中文标签是否匹配
                         if strcmp(config_signal{4}, signal_name)
                             found_signal = config_signal;
-                            % 更新索引为当前选择的信号索引
-                            found_signal{3} = signal_idx;
                             break;
                         end
                     end
@@ -386,7 +376,12 @@ function updateProgressBar(handles, progress, message)
 end
 
 %% 更新信号列表
-function updateSignalList(~, ~, handles)
+function updateSignalList(model_type, handles)
+    % 根据模型类型更新信号列表
+    if nargin < 1 || isempty(model_type)
+        model_type = 'half';
+    end
+    
     handles = get(handles.fig, 'UserData');
     
     % 检查是否有数据
@@ -399,17 +394,85 @@ function updateSignalList(~, ~, handles)
     % 启用信号列表
     set(handles.signalList, 'Enable', 'on');
     
-    % 保持预设的信号列表不变
-    preset_signals = {
-        '车体垂向加速度',
-        '车体俯仰角加速度',
-        '前悬架动挠度',
-        '后悬架动挠度',
-        '前轮胎动位移',
-        '后轮胎动位移'
-    };
+    % 根据模型类型获取信号列表
+    preset_signals = getSignalListByModelType(model_type);
     
-    % 更新信号列表为预设信号
+    % 更新信号列表
     set(handles.signalList, 'String', preset_signals);
-    gui_utils('addLog', handles, sprintf('已更新信号列表，使用预设的 %d 个信号', length(preset_signals)));
+    set(handles.signalList, 'Value', []); % 清除当前选择
+    
+    gui_utils('addLog', handles, sprintf('已更新%s模型信号列表，共 %d 个信号', ...
+        getModelTypeName(model_type), length(preset_signals)));
+    
+    % 保存handles
+    set(handles.fig, 'UserData', handles);
+end
+
+%% 根据模型类型获取信号列表
+function signals = getSignalListByModelType(model_type)
+    try
+        % 从配置文件获取信号定义
+        config = suspension_analysis_config(model_type);
+        
+        % 提取中文标签
+        signals = {};
+        for i = 1:length(config.analysis_signals)
+            signal_def = config.analysis_signals{i};
+            if length(signal_def) >= 4
+                signals{end+1} = signal_def{4}; % 中文标签
+            end
+        end
+        
+        if isempty(signals)
+            % 如果配置文件中没有信号，使用默认信号
+            signals = getDefaultSignals(model_type);
+        end
+        
+    catch ME
+        warning('获取信号配置失败: %s', ME.message);
+        % 使用默认信号列表
+        signals = getDefaultSignals(model_type);
+    end
+end
+
+%% 获取默认信号列表（备用方案）
+function signals = getDefaultSignals(model_type)
+    switch lower(model_type)
+        case 'half'
+            signals = {
+                '车身质心位移',
+                '车身质心速度',
+                '车身质心加速度',
+                '车身俯仰角',
+                '车身俯仰角速度',
+                '车身俯仰角加速度',
+                '前簧载质量加速度',
+                '后簧载质量加速度',
+                '前悬架动行程',
+                '后悬架动行程',
+                '前轮胎动变形',
+                '后轮胎动变形'
+            };
+        case 'quarter'
+            signals = {
+                '簧载质量加速度',
+                '非簧载质量加速度',
+                '悬架动行程',
+                '轮胎动变形'
+            };
+        otherwise
+            signals = {'(无可用信号)'};
+    end
+end
+
+%% 获取模型类型的中文名称
+function name = getModelTypeName(model_type)
+    switch lower(model_type)
+        case 'half'
+            name = '半车';
+        case 'quarter'
+            name = '四分之一车';
+        otherwise
+            name = '未知';
+    end
 end
