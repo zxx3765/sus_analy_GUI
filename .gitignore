@@ -1,0 +1,108 @@
+# MATLAB项目Git忽略文件
+
+# MATLAB临时文件
+*.m~
+*.asv
+*.autosave
+
+# MATLAB编译文件
+*.p
+*.mex*
+*.slx.autosave
+
+# Simulink缓存和临时文件
+slprj/
+*.slxc
+*_sfun.c
+*_sfun.h
+*_sfun.obj
+*_sfun.mexw*
+codegen/
+
+# MATLAB工作空间文件（可选择性忽略）
+*.mat
+
+# 但保留配置和示例数据文件
+!config/*.mat
+!examples/**/*.mat
+!test_data/**/*.mat
+
+# MATLAB生成的图像文件（如果不需要版本控制）
+*.fig
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.eps
+
+# 但保留文档中的图像
+!docs/**/*.png
+!docs/**/*.jpg
+!docs/**/*.jpeg
+!README_images/**/*
+
+# 分析结果文件夹（动态生成的结果）
+results/*/
+!results/.gitkeep
+
+# 日志文件
+*.log
+matlab_crash_dump.*
+java.log.*
+
+# 系统特定文件
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 临时和备份文件
+*~
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# IDE和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MATLAB App Designer临时文件
+*.mlappinstall
+
+# MATLAB Report Generator文件
+*.mldatx
+
+# MATLAB Parallel Computing临时文件
+*.worker
+
+# 自定义配置文件（包含个人路径设置）
+user_config.m
+personal_paths.m
+
+# 大型数据文件（根据需要调整）
+# *.dat
+# large_dataset/
+
+# Python相关（如果项目包含Python脚本）
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# 编译输出
+build/
+dist/
+
+# Claude AI相关（如果项目使用Claude AI）
+.claude/
+CLAUDE.md
