@@ -236,6 +236,12 @@ function runAnalysis(~, ~, handles)
         % 创建自定义配置，只包含选定的信号
         custom_config = handles.config;
         
+        % 传递图例配置（如果存在）
+        if isfield(handles, 'current_legend_config')
+            custom_config.current_legend_config = handles.current_legend_config;
+            gui_utils('addLog', handles, '应用自定义图例配置');
+        end
+        
         % 如果有选定的信号，从配置中获取对应的信号定义
         if ~isempty(selected_signals)
             % 构建新的分析信号配置
@@ -290,6 +296,32 @@ function runAnalysis(~, ~, handles)
             end
         end
         
+        % 将“数据顺序”下拉选择应用到本次分析配置（若存在该模块）
+        try
+            dom = struct();
+            if isfield(handles, 'firstDataDropdown') && ishandle(handles.firstDataDropdown)
+                fiVal = get(handles.firstDataDropdown, 'Value');
+                if ~isempty(fiVal) && fiVal > 1
+                    dom.first_index = fiVal - 1; % 转为1-based索引
+                end
+            end
+            if isfield(handles, 'lastDataDropdown') && ishandle(handles.lastDataDropdown)
+                liVal = get(handles.lastDataDropdown, 'Value');
+                if ~isempty(liVal) && liVal > 1
+                    dom.last_index = liVal - 1; % 转为1-based索引
+                end
+            end
+            if ~isempty(fieldnames(dom))
+                custom_config.data_order_mapping = dom;    % 本次分析使用
+                handles.config.data_order_mapping = dom;   % 同步保存到全局配置
+                gui_utils('addLog', handles, sprintf('应用数据顺序: first=%s, last=%s', ...
+                    ternaryStr(isfield(dom,'first_index'), num2str(dom.first_index), '默认'), ...
+                    ternaryStr(isfield(dom,'last_index'), num2str(dom.last_index), '默认')));
+            end
+        catch ME
+            gui_utils('addLog', handles, sprintf('应用数据顺序失败: %s', ME.message));
+        end
+
         % 调用分析工具
         suspension_analysis_tool(handles.data, handles.labels, 'Config', custom_config);
         
@@ -429,7 +461,7 @@ function signals = getSignalListByModelType(model_type)
         end
         
     catch ME
-        warning('获取信号配置失败: %s', ME.message);
+        warning('SIGNAL:ConfigError', '获取信号配置失败: %s', ME.message);
         % 使用默认信号列表
         signals = getDefaultSignals(model_type);
     end
@@ -475,4 +507,13 @@ function name = getModelTypeName(model_type)
         otherwise
             name = '未知';
     end
+end
+
+%% 简单三元字符串帮助函数（仅本文件内部使用）
+function out = ternaryStr(cond, a, b)
+if cond
+    out = a;
+else
+    out = b;
+end
 end

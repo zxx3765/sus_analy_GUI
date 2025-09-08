@@ -57,13 +57,15 @@ function handles = createMainLayout(handles)
                        'FontWeight', 'bold', ...
                        'BackgroundColor', [0.97, 0.97, 0.97]);
     
-    % 中间面板 - 信号选择 (压缩宽度)
-    middlePanel = uipanel('Parent', fig, ...
-                        'Title', '信号选择 & 分析控制', ...
-                        'Position', [0.375, 0.015, 0.24, 0.97], ...
-                        'FontSize', 11, ...
-                        'FontWeight', 'bold', ...
-                        'BackgroundColor', [0.97, 0.97, 0.97]);
+    % 中间面板 - 创建选项卡组
+    middleTabGroup = uitabgroup('Parent', fig, ...
+                               'Position', [0.375, 0.015, 0.24, 0.97]);
+    
+    % 信号选择选项卡
+    signalTab = uitab(middleTabGroup, 'Title', '📊 信号选择');
+    
+    % 数据顺序设置选项卡
+    orderTab = uitab(middleTabGroup, 'Title', '📈 数据顺序');
     
     % 右侧面板 - 分析和结果 (增加宽度)
     rightPanel = uipanel('Parent', fig, ...
@@ -76,9 +78,19 @@ function handles = createMainLayout(handles)
     %% 调用各模块创建函数
     handles = gui_data_manager(leftPanel, handles);
     handles = gui_config_manager(leftPanel, handles);
-    handles = gui_signal_analysis(middlePanel, handles);
+    handles = gui_signal_analysis(signalTab, handles);
+    handles = gui_simple_data_order(orderTab, handles);  % 简化的数据顺序设置
     handles = gui_log_viewer(rightPanel, handles);
     handles = gui_results_viewer(rightPanel, handles);
+    
+    % 初始刷新一次“数据顺序”下拉（若存在数据则显示全部项）
+    try
+        if exist('updateSimpleDataOrderDropdowns', 'file') == 2
+            updateSimpleDataOrderDropdowns(handles);
+        end
+    catch
+        % 忽略初始化刷新失败
+    end
     
 end
 
@@ -193,6 +205,16 @@ function updateGUIFromConfig(handles)
             ref_str = sprintf('%.1f, ', config.plot.reference_lines);
             ref_str = ref_str(1:end-2); % 移除最后的逗号和空格
             set(handles.refFreqEdit, 'String', ref_str);
+        end
+    end
+    
+    % 数据顺序映射
+    if isfield(config, 'data_order_mapping')
+        if isfield(config.data_order_mapping, 'first_index') && isfield(handles, 'firstDataDropdown')
+            set(handles.firstDataDropdown, 'Value', config.data_order_mapping.first_index + 1);
+        end
+        if isfield(config.data_order_mapping, 'last_index') && isfield(handles, 'lastDataDropdown')
+            set(handles.lastDataDropdown, 'Value', config.data_order_mapping.last_index + 1);
         end
     end
 end

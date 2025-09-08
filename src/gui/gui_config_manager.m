@@ -334,7 +334,10 @@ function updateConfig(src, ~, handles)
             % 忽略参考频率解析错误
         end
         
-        % 保存配置
+        % 保存配置，并保留已有的数据顺序映射（如果有）
+        if isfield(handles, 'config') && isfield(handles.config, 'data_order_mapping')
+            config.data_order_mapping = handles.config.data_order_mapping;
+        end
         handles.config = config;
         handles.results_folder = config.output_folder;
         

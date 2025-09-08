@@ -30,6 +30,13 @@ config.plot.font_size = 12;
 config.plot.figure_size = [800, 600];
 config.plot.reference_lines = [];  % 参考线频率，如 [11, 25]
 
+%% 图例控制配置
+config.plot.legend_preset = 'default';  % 图例预设样式: 'default', 'compact', 'presentation', 'paper', 'colorful', 'minimal', 'hidden'
+config.plot.legend_position = 'auto';   % 图例位置: 'auto' 或具体位置如 'northeast', 'eastoutside' 等
+config.plot.legend_show = true;         % 是否显示图例
+config.plot.legend_font_size = [];      % 图例字体大小，空则使用默认
+config.plot.custom_labels = {};         % 自定义标签映射，格式: {'原标签1', '新标签1'; '原标签2', '新标签2'}
+
 %% 语言配置 ('cn' 或 'en')
 config.language = 'cn';
 
@@ -124,8 +131,8 @@ config.states.state_1 = 1;                  % 第1个状态信号
 config.states.state_2 = 2;                  % 第2个状态信号
 config.states.state_3 = 3;                  % 第3个状态信号
 config.states.state_4 = 4;                  % 第4个状态信号
-config.states.susp_def = 5;                 % 第5个状态信号（悬架变形）
-config.states.tire_def = 6;                 % 第6个状态信号（轮胎变形）
+config.states.susp_def = 6;                 % 第5个状态信号（悬架变形）
+config.states.tire_def = 5;                 % 第6个状态信号（轮胎变形）
 
 % 其他单一信号索引映射
 config.road.input = 1;                      % 路面输入索引

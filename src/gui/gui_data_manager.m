@@ -377,6 +377,15 @@ function updateDataList(handles)
         end
         set(handles.dataList, 'String', display_labels);
     end
+    
+    % 更新简化数据顺序的下拉列表
+    if exist('updateSimpleDataOrderDropdowns', 'file') == 2
+        try
+            updateSimpleDataOrderDropdowns(handles);
+        catch
+            % 如果函数不存在或调用失败，静默处理
+        end
+    end
 end
 
 %% 选择数据项回调函数

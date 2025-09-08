@@ -19,7 +19,28 @@ else
     legend_labels = convertLabelsToEnglish(labels);
 end
 
-% 计算相对RMS值（以第一个为基准）- 使用原有函数的逻辑
+% 若指定了数据顺序映射，则在绘图前对数据与标签进行重排
+order = 1:length(legend_labels);
+if isfield(config, 'data_order_mapping') && ~isempty(config.data_order_mapping)
+    dom = config.data_order_mapping;
+    n = length(order);
+    % 移动到首位
+    if isfield(dom, 'first_index') && ~isempty(dom.first_index) && dom.first_index >= 1 && dom.first_index <= n
+        fi = dom.first_index;
+        order = [fi, setdiff(order, fi, 'stable')];
+    end
+    % 移动到末位
+    if isfield(dom, 'last_index') && ~isempty(dom.last_index) && dom.last_index >= 1 && dom.last_index <= n
+        li = dom.last_index;
+        % 将 li 移到末尾
+        order = [setdiff(order, li, 'stable'), li];
+    end
+    % 应用到数据与标签
+    rms_values = rms_values(order);
+    legend_labels = legend_labels(order);
+end
+
+% 计算相对RMS值（以第一个为基准）
 baseline_rms = rms_values(1);
 relative_percentages = (rms_values / baseline_rms) * 100;
 
@@ -27,8 +48,15 @@ relative_percentages = (rms_values / baseline_rms) * 100;
 disp(rms_values);
 fprintf('%.6f\n', rms_values);
 
+% 获取图形大小设置
+if isfield(config, 'plot') && isfield(config.plot, 'figure_size')
+    figure_size = config.plot.figure_size;
+else
+    figure_size = [800, 600];  % 默认大小
+end
+
 % 创建新图窗
-fig_handle = figure('Position', [100, 100, config.plot.figure_size]);
+fig_handle = figure('Position', [100, 100, figure_size]);
 
 % 设置打印属性以避免剪切警告
 set(fig_handle, 'PaperType', 'A4');
@@ -39,16 +67,30 @@ set(fig_handle, 'PaperPosition', [0 0 1 1]);
 % 绘制柱状图
 bar_handle = bar(relative_percentages);
 
-% 设置柱状图颜色 (参考原有函数的颜色方案)
-for i = 1:length(legend_labels)
-    if i == length(legend_labels) % 最后一个信号
-        bar_handle.FaceColor = 'flat';
-        bar_handle.CData(i, :) = [252,178,175]./255; % 浅红色
-    else
-        bar_handle.FaceColor = 'flat';
-        bar_handle.CData(i, :) = [155,223,223]./255; % 浅蓝色
+% 获取柱状图颜色（根据重排后的“最后”位置着色）
+last_pos = [];
+if isfield(config, 'data_order_mapping') && isfield(config.data_order_mapping, 'last_index')
+    try
+        % last_index 原本基于原始顺序，重排后需要找到其在新顺序中的位置
+        dom = config.data_order_mapping;
+        if ~isempty(dom.last_index) && dom.last_index >= 1 && dom.last_index <= length(legend_labels)
+            % 在 order 中查找原始 last_index 的现位置
+            % 注意：若未设置 order（没有映射），此处按原位
+            if exist('order', 'var')
+                last_pos = find(order == dom.last_index, 1);
+            else
+                last_pos = dom.last_index;
+            end
+        end
+    catch
+        last_pos = [];
     end
 end
+bar_colors = get_rms_bar_colors(length(legend_labels), last_pos, config);
+
+% 设置柱状图颜色
+bar_handle.FaceColor = 'flat';
+bar_handle.CData = bar_colors;
 
 % 设置x轴标签
 set(gca, 'XTick', 1:length(legend_labels), 'XTickLabel', legend_labels);

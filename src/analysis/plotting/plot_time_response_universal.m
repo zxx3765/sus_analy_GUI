@@ -40,8 +40,36 @@ else
     legend_labels = convertLabelsToEnglish(labels);
 end
 
+% 若指定了数据顺序映射，则在绘图前对数据与标签进行重排
+order = 1:length(legend_labels);
+if isfield(config, 'data_order_mapping') && ~isempty(config.data_order_mapping)
+    dom = config.data_order_mapping;
+    n = length(order);
+    % 移动到首位
+    if isfield(dom, 'first_index') && ~isempty(dom.first_index) && dom.first_index >= 1 && dom.first_index <= n
+        fi = dom.first_index;
+        order = [fi, setdiff(order, fi, 'stable')];
+    end
+    % 移动到末位
+    if isfield(dom, 'last_index') && ~isempty(dom.last_index) && dom.last_index >= 1 && dom.last_index <= n
+        li = dom.last_index;
+        order = [setdiff(order, li, 'stable'), li];
+    end
+    % 应用到数据与标签
+    signal_data = signal_data(:, order);
+    labels = labels(order);
+    legend_labels = legend_labels(order);
+end
+
+% 获取图形大小设置
+if isfield(config, 'plot') && isfield(config.plot, 'figure_size')
+    figure_size = config.plot.figure_size;
+else
+    figure_size = [800, 600];  % 默认大小
+end
+
 % 创建新图窗
-fig_handle = figure('Position', [100, 100, config.plot.figure_size]);
+fig_handle = figure('Position', [100, 100, figure_size]);
 
 % 设置打印属性以避免剪切警告
 set(fig_handle, 'PaperType', 'A4');
@@ -51,29 +79,56 @@ set(fig_handle, 'PaperPosition', [0 0 1 1]);
 
 hold on;
 
-% 颜色设置 (参考原有函数)
-colors = lines(length(labels));
-colors(end,:) = [0,0,0];  % 最后一个设为黑色
-
-% 绘制每个数据集的时域响应 (参考原有函数的线型设置)
-for i = 1:size(signal_data, 2)
-    if i == 1
-        plot(time_vector, signal_data(:,i), '--', 'LineWidth', 1.5, ...
-             'DisplayName', legend_labels{i}, 'Color', colors(i,:));
-    elseif i == length(legend_labels)
-        plot(time_vector, signal_data(:,i), '-', 'LineWidth', 1.5, ...
-             'DisplayName', legend_labels{i}, 'Color', colors(i,:));
-    else
-        plot(time_vector, signal_data(:,i), '-', 'LineWidth', 1.0, ...
-             'DisplayName', legend_labels{i}, 'Color', colors(i,:));
+% 获取简化的数据样式映射（重排后将 first/last 映射到 1 和 n）
+dom_after = struct();
+if isfield(config, 'data_order_mapping') && ~isempty(config.data_order_mapping)
+    dom_orig = config.data_order_mapping;
+    if isfield(dom_orig, 'first_index') && ~isempty(dom_orig.first_index)
+        dom_after.first_index = 1; % 重排后，该数据已位于首位
     end
+    if isfield(dom_orig, 'last_index') && ~isempty(dom_orig.last_index)
+        dom_after.last_index = length(legend_labels); % 重排后，该数据已位于末位
+    end
+end
+if isempty(fieldnames(dom_after))
+    dom_after = [];
+end
+[line_styles, colors, line_widths] = get_simple_data_styles(legend_labels, dom_after, config);
+
+% 绘制每个数据集的时域响应
+for i = 1:size(signal_data, 2)
+    plot(time_vector, signal_data(:,i), line_styles{i}, ...
+         'LineWidth', line_widths(i), ...
+         'DisplayName', legend_labels{i}, ...
+         'Color', colors(i,:), ...
+         'Marker', 'none');
 end
 
 % 设置图形属性 (参考原有函数)
 xlabel(xlabel_str, 'FontSize', config.plot.font_size);
 ylabel(ylabel_str, 'FontSize', config.plot.font_size);
 % title(title_str, 'FontSize', config.plot.font_size);  % 注释掉标题，与原函数一致
-legend('Location', 'best');
+
+% 应用图例控制
+if exist('legend_control', 'file')
+    try
+        legend_config = legend_control(config, signal_info, labels);
+        % 应用预设样式 (如果配置中指定了)
+        if isfield(config.plot, 'legend_preset') && ~isempty(config.plot.legend_preset)
+            preset_config = legend_style_presets(config.plot.legend_preset, config.language);
+            % 合并预设配置和自定义配置
+            legend_config = merge_legend_configs(legend_config, preset_config);
+        end
+    apply_legend_settings(fig_handle, legend_config);
+    catch ME
+        fprintf('  ⚠ 图例控制出错，使用默认图例: %s\n', ME.message);
+        legend('Location', 'best');
+    end
+else
+    % 回退到原有图例设置
+    legend('Location', 'best');
+end
+
 grid on;
 
 % 保存图形
