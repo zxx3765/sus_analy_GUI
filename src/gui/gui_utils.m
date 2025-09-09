@@ -241,7 +241,7 @@ function result_struct = convertSimulinkOutput(sim_output)
 end
 
 %% 生成唯一的输出文件夹名
-function folder_name = generateUniqueFolder(base_name)
+function folder_name = generateUniqueFolder(base_name) %#ok<DEFNU>
 %GENERATEUNIQUEFOLDER 生成唯一的文件夹名称
 %
 % 输入:
@@ -268,7 +268,7 @@ function folder_name = generateUniqueFolder(base_name)
 end
 
 %% 安全的文件名生成
-function safe_name = makeSafeFilename(filename)
+function safe_name = makeSafeFilename(filename) %#ok<DEFNU>
 %MAKESAFEFILENAME 生成安全的文件名，移除无效字符
 %
 % 输入:
@@ -300,7 +300,7 @@ function safe_name = makeSafeFilename(filename)
 end
 
 %% 检查必需的工具箱
-function [available, missing] = checkRequiredToolboxes()
+function [available, missing] = checkRequiredToolboxes() %#ok<DEFNU>
 %CHECKREQUIREDTOOLBOXES 检查必需的MATLAB工具箱是否可用
 %
 % 输出:
@@ -335,7 +335,7 @@ function [available, missing] = checkRequiredToolboxes()
 end
 
 %% 格式化文件大小
-function size_str = formatFileSize(bytes)
+function size_str = formatFileSize(bytes) %#ok<DEFNU>
 %FORMATFILESIZE 将字节数格式化为可读的文件大小字符串
 %
 % 输入:
@@ -356,7 +356,7 @@ function size_str = formatFileSize(bytes)
 end
 
 %% 获取系统信息
-function info = getSystemInfo()
+function info = getSystemInfo() %#ok<DEFNU>
 %GETSYSTEMINFO 获取系统和MATLAB环境信息
 %
 % 输出:
@@ -391,7 +391,7 @@ function info = getSystemInfo()
         end
         
     catch ME
-        warning('获取系统信息失败: %s', ME.message);
+        warning('%s', ['获取系统信息失败: ' ME.message]);
     end
 end
 
@@ -490,15 +490,8 @@ function updateSignalListFromUtils(model_type, handles)
             handles = get(handles.fig, 'UserData');
         end
         
-        % 检查是否有数据
-        if isempty(handles.data)
-            set(handles.signalList, 'String', {'(无可用信号)'});
-            set(handles.signalList, 'Enable', 'off');
-            return;
-        end
-        
-        % 启用信号列表
-        set(handles.signalList, 'Enable', 'on');
+    % 始终允许选择信号（即使未导入数据，也先展示可选项）
+    set(handles.signalList, 'Enable', 'on');
         
         % 根据模型类型获取信号列表
         preset_signals = getSignalListByModelType(model_type);
@@ -517,7 +510,7 @@ function updateSignalListFromUtils(model_type, handles)
         end
         
     catch ME
-        warning('更新信号列表失败: %s', ME.message);
+        warning('%s', ['更新信号列表失败: ' ME.message]);
     end
 end
 
@@ -542,7 +535,7 @@ function signals = getSignalListByModelType(model_type)
         end
         
     catch ME
-        warning('获取信号配置失败: %s', ME.message);
+        warning('%s', ['获取信号配置失败: ' ME.message]);
         % 使用默认信号列表
         signals = getDefaultSignals(model_type);
     end
