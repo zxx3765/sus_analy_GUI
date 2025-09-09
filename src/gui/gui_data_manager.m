@@ -386,6 +386,13 @@ function updateDataList(handles)
             % 如果函数不存在或调用失败，静默处理
         end
     end
+    % 更新自定义顺序列表
+    if exist('updateCustomOrderList', 'file') == 2
+        try
+            updateCustomOrderList(handles);
+        catch
+        end
+    end
 end
 
 %% 选择数据项回调函数

@@ -40,26 +40,37 @@ else
     legend_labels = convertLabelsToEnglish(labels);
 end
 
-% 若指定了数据顺序映射，则在绘图前对数据与标签进行重排
+% 计算最终顺序：先按 data_order_list 重排，再将 first/last（原始索引）移到首/末
 order = 1:length(legend_labels);
+if isfield(config, 'data_order_list') && ~isempty(config.data_order_list)
+    ord = config.data_order_list(:)';
+    ord = unique(ord, 'stable');
+    ord = ord(ord>=1 & ord<=length(order));
+    rest = setdiff(order, ord, 'stable');
+    order = [ord, rest];
+end
+
 if isfield(config, 'data_order_mapping') && ~isempty(config.data_order_mapping)
     dom = config.data_order_mapping;
-    n = length(order);
-    % 移动到首位
-    if isfield(dom, 'first_index') && ~isempty(dom.first_index) && dom.first_index >= 1 && dom.first_index <= n
-        fi = dom.first_index;
-        order = [fi, setdiff(order, fi, 'stable')];
+    % 注意：dom.*_index 基于原始数据索引，这里应将对应元素移动到当前order的首/末
+    if isfield(dom, 'first_index') && ~isempty(dom.first_index)
+        fi_val = dom.first_index; % 原始索引值
+        if any(order == fi_val)
+            order = [fi_val, setdiff(order, fi_val, 'stable')];
+        end
     end
-    % 移动到末位
-    if isfield(dom, 'last_index') && ~isempty(dom.last_index) && dom.last_index >= 1 && dom.last_index <= n
-        li = dom.last_index;
-        order = [setdiff(order, li, 'stable'), li];
+    if isfield(dom, 'last_index') && ~isempty(dom.last_index)
+        li_val = dom.last_index; % 原始索引值
+        if any(order == li_val)
+            order = [setdiff(order, li_val, 'stable'), li_val];
+        end
     end
-    % 应用到数据与标签
-    signal_data = signal_data(:, order);
-    labels = labels(order);
-    legend_labels = legend_labels(order);
 end
+
+% 应用最终顺序到数据与标签
+signal_data = signal_data(:, order);
+labels = labels(order);
+legend_labels = legend_labels(order);
 
 % 获取图形大小设置
 if isfield(config, 'plot') && isfield(config.plot, 'figure_size')

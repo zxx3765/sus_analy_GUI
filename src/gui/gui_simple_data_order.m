@@ -124,6 +124,71 @@ function handles = gui_simple_data_order(parent, handles)
               'BackgroundColor', [0.1, 0.7, 0.1], ...
               'ForegroundColor', 'white', ...
               'Callback', {@applyOrder, handles});
+
+    % === 自定义顺序（顶部区域） ===
+    customOrderPanel = uipanel('Parent', orderPanel, ...
+              'Title', '📋 自定义顺序（可选）', ...
+              'Position', [0.50, 0.52, 0.48, 0.46], ...
+              'FontSize', 10, ...
+              'FontWeight', 'bold', ...
+              'BackgroundColor', [0.97, 0.98, 1.0]);
+
+    handles.enableCustomOrderCheck = uicontrol('Parent', customOrderPanel, ...
+              'Style', 'checkbox', ...
+              'String', '启用自定义顺序（优先于下方设置）', ...
+              'Units', 'normalized', ...
+              'Position', [0.02, 0.82, 0.96, 0.14], ...
+              'Value', 0, ...
+              'FontSize', 9);
+
+    handles.customOrderList = uicontrol('Parent', customOrderPanel, ...
+              'Style', 'listbox', ...
+              'Units', 'normalized', ...
+              'Position', [0.02, 0.10, 0.70, 0.70], ...
+              'FontSize', 9, ...
+              'Max', 2, ...
+              'Min', 0, ...
+              'BackgroundColor', 'white');
+
+    handles.btnMoveUp = uicontrol('Parent', customOrderPanel, ...
+              'Style', 'pushbutton', ...
+              'String', '上移', ...
+              'Units', 'normalized', ...
+              'Position', [0.74, 0.66, 0.24, 0.14], ...
+              'FontSize', 9, ...
+              'Callback', {@onCustomOrderMove, handles, 'up'});
+
+    handles.btnMoveDown = uicontrol('Parent', customOrderPanel, ...
+              'Style', 'pushbutton', ...
+              'String', '下移', ...
+              'Units', 'normalized', ...
+              'Position', [0.74, 0.50, 0.24, 0.14], ...
+              'FontSize', 9, ...
+              'Callback', {@onCustomOrderMove, handles, 'down'});
+
+    handles.btnMoveTop = uicontrol('Parent', customOrderPanel, ...
+              'Style', 'pushbutton', ...
+              'String', '置顶', ...
+              'Units', 'normalized', ...
+              'Position', [0.74, 0.34, 0.24, 0.14], ...
+              'FontSize', 9, ...
+              'Callback', {@onCustomOrderMove, handles, 'top'});
+
+    handles.btnMoveBottom = uicontrol('Parent', customOrderPanel, ...
+              'Style', 'pushbutton', ...
+              'String', '置底', ...
+              'Units', 'normalized', ...
+              'Position', [0.74, 0.18, 0.24, 0.14], ...
+              'FontSize', 9, ...
+              'Callback', {@onCustomOrderMove, handles, 'bottom'});
+
+    handles.btnOrderReset = uicontrol('Parent', customOrderPanel, ...
+              'Style', 'pushbutton', ...
+              'String', '重置顺序', ...
+              'Units', 'normalized', ...
+              'Position', [0.74, 0.02, 0.24, 0.12], ...
+              'FontSize', 9, ...
+              'Callback', {@onCustomOrderReset, handles});
     
     % === 帮助信息 ===
     help_text = ['💡 使用说明：', newline, ...
@@ -148,6 +213,13 @@ function handles = gui_simple_data_order(parent, handles)
         end
     end
     updateOrderStatus(handles);
+    % 初始化自定义顺序列表
+    if exist('updateCustomOrderList', 'file') == 2
+        try
+            updateCustomOrderList(handles);
+        catch
+        end
+    end
     
 end
 
@@ -193,6 +265,14 @@ function resetSetting(~, ~, handles)
     set(handles.firstDataDropdown, 'Value', 1);
     set(handles.lastDataDropdown, 'Value', 1);
     
+    % 重置自定义顺序
+    if exist('updateCustomOrderList', 'file') == 2
+        try
+            updateCustomOrderList(handles);
+        catch
+        end
+    end
+
     updateOrderStatus(handles);
     gui_utils('addLog', handles, '数据顺序设置已重置');
 end
@@ -250,6 +330,22 @@ function applyOrder(~, ~, handles)
     % 获取当前设置
     order_mapping = getCurrentOrderMapping(handles);
     
+    % 处理自定义顺序
+    try
+        if isfield(handles, 'enableCustomOrderCheck') && get(handles.enableCustomOrderCheck, 'Value') == 1 ...
+                && isfield(handles, 'customOrderList') && ishandle(handles.customOrderList)
+            idxs = get(handles.customOrderList, 'UserData');
+            if isnumeric(idxs) && ~isempty(idxs)
+                handles.config.data_order_list = idxs(:)';
+            end
+        else
+            if isfield(handles, 'config') && isfield(handles.config, 'data_order_list')
+                handles.config = rmfield(handles.config, 'data_order_list');
+            end
+        end
+    catch
+    end
+    
     % 保存到配置中
     if isfield(handles, 'config')
         handles.config.data_order_mapping = order_mapping;
@@ -267,6 +363,60 @@ function applyOrder(~, ~, handles)
     if ~isempty(fieldnames(order_mapping))
         msgbox('数据顺序设置已应用！运行分析时将使用指定的样式', '应用成功', 'help');
     end
+end
+
+%% 自定义顺序移动
+function onCustomOrderMove(~, ~, handles, action)
+    handles = get(handles.fig, 'UserData');
+    if ~isfield(handles, 'customOrderList') || ~ishandle(handles.customOrderList)
+        return;
+    end
+    idxs = get(handles.customOrderList, 'UserData');
+    sel = get(handles.customOrderList, 'Value');
+    if isempty(idxs) || isempty(sel)
+        return;
+    end
+    i = sel(1);
+    switch action
+        case 'up'
+            if i > 1
+                idxs([i-1 i]) = idxs([i i-1]);
+                i = i-1;
+            end
+        case 'down'
+            if i < numel(idxs)
+                idxs([i i+1]) = idxs([i+1 i]);
+                i = i+1;
+            end
+        case 'top'
+            if i > 1
+                v = idxs(i); idxs(i) = []; idxs = [v idxs]; i = 1;
+            end
+        case 'bottom'
+            if i < numel(idxs)
+                v = idxs(i); idxs(i) = []; idxs(end+1) = v; i = numel(idxs);
+            end
+    end
+    labels = handles.labels;
+    strs = arrayfun(@(k) sprintf('%d. %s', idxs(k), labels{idxs(k)}), 1:numel(idxs), 'UniformOutput', false);
+    set(handles.customOrderList, 'String', strs);
+    set(handles.customOrderList, 'UserData', idxs);
+    set(handles.customOrderList, 'Value', i);
+end
+
+function onCustomOrderReset(~, ~, handles)
+    handles = get(handles.fig, 'UserData');
+    if ~isfield(handles, 'labels') || isempty(handles.labels)
+        set(handles.customOrderList, 'String', {'(无数据)'});
+        set(handles.customOrderList, 'UserData', []);
+        return;
+    end
+    labels = handles.labels;
+    idxs = 1:numel(labels);
+    strs = arrayfun(@(i) sprintf('%d. %s', i, labels{i}), idxs, 'UniformOutput', false);
+    set(handles.customOrderList, 'String', strs);
+    set(handles.customOrderList, 'UserData', idxs);
+    set(handles.customOrderList, 'Value', 1);
 end
 
 %% 获取当前顺序设置

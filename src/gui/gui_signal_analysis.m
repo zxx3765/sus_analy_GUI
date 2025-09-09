@@ -311,6 +311,16 @@ function runAnalysis(~, ~, handles)
                     dom.last_index = liVal - 1; % 转为1-based索引
                 end
             end
+            % 读取自定义顺序（若启用）
+            if isfield(handles, 'enableCustomOrderCheck') && get(handles.enableCustomOrderCheck,'Value') == 1 ...
+                    && isfield(handles, 'customOrderList') && ishandle(handles.customOrderList)
+                ord = get(handles.customOrderList, 'UserData');
+                if isnumeric(ord) && ~isempty(ord)
+                    custom_config.data_order_list = ord(:)';
+                    handles.config.data_order_list = ord(:)';
+                    gui_utils('addLog', handles, sprintf('应用自定义顺序: [%s]', num2str(ord)));
+                end
+            end
             if ~isempty(fieldnames(dom))
                 custom_config.data_order_mapping = dom;    % 本次分析使用
                 handles.config.data_order_mapping = dom;   % 同步保存到全局配置

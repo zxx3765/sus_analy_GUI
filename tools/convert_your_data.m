@@ -134,18 +134,7 @@ try
         fprintf('  保留原样: %d 个结构体变量\n', length(struct_vars));
         fprintf('  保留原样: %d 个其他变量\n', length(other_vars));
         fprintf('\n转换后的文件: %s\n', output_file);
-        fprintf('现在可以在GUI中导入此文件！\n');
-        
-        %% 询问是否启动GUI
-        launch_gui_label = input('\n是否启动悬架分析GUI？(y/n): ', 's');
-        if strcmpi(launch_gui_label, 'y') || strcmpi(launch_gui_label, 'yes')
-            try
-                suspension_analysis_gui;
-            catch ME
-                fprintf('启动GUI失败: %s\n', ME.message);
-            end
-        end
-        
+        fprintf('现在可以在GUI中导入此文件！\n');        
     else
         fprintf('\n✗ 没有成功转换任何变量\n');
     end

@@ -19,26 +19,35 @@ else
     legend_labels = convertLabelsToEnglish(labels);
 end
 
-% 若指定了数据顺序映射，则在绘图前对数据与标签进行重排
+% 统一计算最终顺序：先按 data_order_list，再应用 first/last（原始索引）
 order = 1:length(legend_labels);
+if isfield(config, 'data_order_list') && ~isempty(config.data_order_list)
+    ord = config.data_order_list(:)';
+    ord = unique(ord, 'stable');
+    ord = ord(ord>=1 & ord<=length(order));
+    rest = setdiff(order, ord, 'stable');
+    order = [ord, rest];
+end
+
 if isfield(config, 'data_order_mapping') && ~isempty(config.data_order_mapping)
     dom = config.data_order_mapping;
-    n = length(order);
-    % 移动到首位
-    if isfield(dom, 'first_index') && ~isempty(dom.first_index) && dom.first_index >= 1 && dom.first_index <= n
-        fi = dom.first_index;
-        order = [fi, setdiff(order, fi, 'stable')];
+    if isfield(dom, 'first_index') && ~isempty(dom.first_index)
+        fi_val = dom.first_index;
+        if any(order == fi_val)
+            order = [fi_val, setdiff(order, fi_val, 'stable')];
+        end
     end
-    % 移动到末位
-    if isfield(dom, 'last_index') && ~isempty(dom.last_index) && dom.last_index >= 1 && dom.last_index <= n
-        li = dom.last_index;
-        % 将 li 移到末尾
-        order = [setdiff(order, li, 'stable'), li];
+    if isfield(dom, 'last_index') && ~isempty(dom.last_index)
+        li_val = dom.last_index;
+        if any(order == li_val)
+            order = [setdiff(order, li_val, 'stable'), li_val];
+        end
     end
-    % 应用到数据与标签
-    rms_values = rms_values(order);
-    legend_labels = legend_labels(order);
 end
+
+% 应用最终顺序
+rms_values = rms_values(order);
+legend_labels = legend_labels(order);
 
 % 计算相对RMS值（以第一个为基准）
 baseline_rms = rms_values(1);
@@ -71,16 +80,9 @@ bar_handle = bar(relative_percentages);
 last_pos = [];
 if isfield(config, 'data_order_mapping') && isfield(config.data_order_mapping, 'last_index')
     try
-        % last_index 原本基于原始顺序，重排后需要找到其在新顺序中的位置
         dom = config.data_order_mapping;
-        if ~isempty(dom.last_index) && dom.last_index >= 1 && dom.last_index <= length(legend_labels)
-            % 在 order 中查找原始 last_index 的现位置
-            % 注意：若未设置 order（没有映射），此处按原位
-            if exist('order', 'var')
-                last_pos = find(order == dom.last_index, 1);
-            else
-                last_pos = dom.last_index;
-            end
+        if ~isempty(dom.last_index)
+            last_pos = find(order == dom.last_index, 1);
         end
     catch
         last_pos = [];

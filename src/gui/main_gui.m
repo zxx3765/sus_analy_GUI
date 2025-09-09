@@ -88,6 +88,9 @@ function handles = createMainLayout(handles)
         if exist('updateSimpleDataOrderDropdowns', 'file') == 2
             updateSimpleDataOrderDropdowns(handles);
         end
+        if exist('updateCustomOrderList', 'file') == 2
+            updateCustomOrderList(handles);
+        end
     catch
         % 忽略初始化刷新失败
     end
