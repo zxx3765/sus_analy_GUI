@@ -240,6 +240,15 @@ if config.save_plots
     fprintf('  保存路径: %s\n', save_path);
     fprintf('  输出文件夹: %s\n', config.output_folder);
     fprintf('  文件夹存在: %s\n', mat2str(exist(config.output_folder, 'dir')));
+    % 确保输出目录存在
+    if ~exist(config.output_folder, 'dir')
+        try
+            mkdir(config.output_folder);
+            fprintf('  ✓ 已创建输出目录: %s\n', config.output_folder);
+        catch ME
+            fprintf('  ✗ 创建输出目录失败: %s\n', ME.message);
+        end
+    end
     
     try
         % 设置为当前图形以确保正确保存

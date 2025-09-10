@@ -206,6 +206,16 @@ function handles = gui_config_manager(parent, handles)
                                          'Value', 1, ...
                                          'FontSize', 9, ...
                                          'Callback', {@updateConfig, handles});
+
+    % 新增：峰值对比分析
+    y_pos = y_pos - 25;
+    handles.extremeAnalysisCheck = uicontrol('Parent', configPanel, ...
+                                            'Style', 'checkbox', ...
+                                            'String', '峰值对比分析（柱形图）', ...
+                                            'Position', [15, y_pos, 180, 20], ...
+                                            'Value', 0, ...
+                                            'FontSize', 9, ...
+                                            'Callback', {@updateConfig, handles});
     
     %% 高级选项分组
     y_pos = y_pos - 60;
@@ -322,6 +332,9 @@ function updateConfig(src, ~, handles)
         config.analysis.time_domain = logical(get(handles.timeAnalysisCheck, 'Value'));
         config.analysis.rms_comparison = logical(get(handles.rmsAnalysisCheck, 'Value'));
         config.analysis.statistical = logical(get(handles.statAnalysisCheck, 'Value'));
+        if isfield(handles, 'extremeAnalysisCheck')
+            config.analysis.peak_comparison = logical(get(handles.extremeAnalysisCheck, 'Value'));
+        end
         
         % 更新参考频率
         ref_freq_str = get(handles.refFreqEdit, 'String');
@@ -546,6 +559,9 @@ function updateGUIFromConfig(handles)
         end
         if isfield(handles, 'statAnalysisCheck')
             set(handles.statAnalysisCheck, 'Value', config.analysis.statistical);
+        end
+        if isfield(handles, 'extremeAnalysisCheck') && isfield(config.analysis, 'peak_comparison')
+            set(handles.extremeAnalysisCheck, 'Value', config.analysis.peak_comparison);
         end
     end
     

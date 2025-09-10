@@ -23,6 +23,7 @@ config.analysis.frequency_response = true;   % 频率响应分析
 config.analysis.time_domain = true;          % 时域分析
 config.analysis.rms_comparison = true;       % RMS对比分析
 config.analysis.statistical = true;          % 统计分析
+config.analysis.peak_comparison = false;     % 峰值对比分析（柱形图），默认关闭（不区分正负）
 
 %% 绘图配置
 config.plot.line_width = 1.5;
@@ -119,6 +120,7 @@ config.data_fields.road_input = 'xr';       % 路面输入 [5001×1]
 config.data_fields.reward = 'reward';       % 奖励数据 [5001×1]
 config.data_fields.road_derivative = 'd_xr'; % 路面输入导数 [5001×1]
 config.data_fields.velocity_def = 'v_def';  % 速度缺陷 [5001×1]
+config.data_fields.x_def = 'x_def';  
 
 % 状态导数信号索引映射 (基于state_dot [5001×4])
 config.signals.signal_1 = 1;                % 第1个状态导数信号
@@ -131,7 +133,7 @@ config.states.state_1 = 1;                  % 第1个状态信号
 config.states.state_2 = 2;                  % 第2个状态信号
 config.states.state_3 = 3;                  % 第3个状态信号
 config.states.state_4 = 4;                  % 第4个状态信号
-config.states.susp_def = 6;                 % 第5个状态信号（悬架变形）
+
 config.states.tire_def = 5;                 % 第6个状态信号（轮胎变形）
 
 % 其他单一信号索引映射
@@ -139,7 +141,7 @@ config.road.input = 1;                      % 路面输入索引
 config.reward.total = 1;                    % 总奖励索引
 config.road_derivative.input = 1;           % 路面输入导数索引
 config.velocity_def.value = 1;              % 速度缺陷索引
-
+config.states.susp_def = 1;                 % 悬架变形
 % 分析信号配置 - 根据实际数据结构
 config.analysis_signals = {
     % {信号名称, 数据来源, 索引, 中文标签, 英文标签, 单位}
@@ -149,7 +151,7 @@ config.analysis_signals = {
     {'unsprung_acc', 'state_dot', config.signals.unsprung_acc, '非簧载质量加速度', 'Unsprung Mass Acceleration', 'm/s²'};
     
     % 基于状态的信号 (state)
-    {'susp_def', 'state', config.states.susp_def, '悬架动行程', 'Suspension Deflection', 'm'};
+    {'susp_def', 'x_def', config.states.susp_def, '悬架动行程', 'Suspension Deflection', 'm'};
     {'tire_def', 'state', config.states.tire_def, '轮胎动变形', 'Tire Deflection', 'm'};
     
     % 单一信号

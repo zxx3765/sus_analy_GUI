@@ -150,6 +150,15 @@ if config.save_plots
     % 调试信息
     fprintf('  保存图形: %s\n', filename);
     fprintf('  保存路径: %s\n', save_path);
+    % 确保输出目录存在
+    if ~exist(config.output_folder, 'dir')
+        try
+            mkdir(config.output_folder);
+            fprintf('  ✓ 已创建输出目录: %s\n', config.output_folder);
+        catch ME
+            fprintf('  ✗ 创建输出目录失败: %s\n', ME.message);
+        end
+    end
     
     try
         % 设置为当前图形以确保正确保存

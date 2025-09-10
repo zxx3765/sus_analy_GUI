@@ -353,8 +353,12 @@ function runAnalysis(~, ~, handles)
         
         updateProgressBar(handles, 1.0, '分析完成');
         
-        % 更新结果显示
-        handles.results_folder = handles.config.output_folder;
+        % 更新结果显示 — 使用本次分析的输出目录
+        try
+            handles.results_folder = custom_config.output_folder;
+        catch
+            handles.results_folder = handles.config.output_folder; % 回退
+        end
         if isfield(handles, 'resultsFolderText')
             set(handles.resultsFolderText, 'String', handles.results_folder);
         end

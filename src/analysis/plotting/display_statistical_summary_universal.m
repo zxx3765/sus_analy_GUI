@@ -30,7 +30,7 @@ for i = 1:length(signal_names)
     % 格式化输出
     fprintf('%-20s', signal_name);
     for j = 1:length(rms_values)
-        fprintf('%-12.4f', rms_values(j));
+        fprintf('%-12.6f', rms_values(j));
     end
     fprintf('\n');
 end
@@ -56,7 +56,7 @@ if config.save_plots
         fprintf(fileID, '-----\t\t----\t\t---\t\t---\t\t---\t\t---\n');
         
         for j = 1:length(labels)
-            fprintf(fileID, '%s\t\t%.4f\t\t%.4f\t\t%.4f\t\t%.4f\t\t%.4f\n', ...
+            fprintf(fileID, '%s\t\t%.6f\t\t%.6f\t\t%.6f\t\t%.6f\t\t%.6f\n', ...
                    labels{j}, ...
                    stats_results.(signal_name).mean(j), ...
                    stats_results.(signal_name).std(j), ...

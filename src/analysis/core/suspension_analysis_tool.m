@@ -118,6 +118,12 @@ if config.analysis.statistical
     perform_statistical_analysis(processed_data, config);
 end
 
+% 5. 峰值对比分析
+if isfield(config.analysis, 'peak_comparison') && config.analysis.peak_comparison
+    fprintf('  - 峰值对比分析\n');
+    perform_peak_analysis(processed_data, config);
+end
+
 fprintf('分析完成！\n');
 if config.save_plots
     fprintf('结果已保存至: %s\n', config.output_folder);
@@ -294,6 +300,38 @@ end
 
 % 显示统计摘要
 display_statistical_summary(stats_results, processed_data.labels, config);
+
+end
+
+%% 峰值分析（柱形图，形式与RMS一致；不区分正负）
+function perform_peak_analysis(processed_data, config)
+
+peak_results = struct();
+
+for i = 1:length(config.analysis_signals)
+    signal_info = config.analysis_signals{i};
+    signal_name = signal_info{1};
+    data_source = signal_info{2};
+    signal_idx = signal_info{3};
+    
+    % 提取信号数据 [N x M]
+    signal_data = extract_signal_data(processed_data, data_source, signal_idx, config);
+    
+    % 计算峰值（最大绝对值）
+    [peak_values, relative_percentages] = calculate_peak_universal(signal_data, processed_data.labels, config);
+    
+    peak_results.(signal_name).peak = peak_values;
+    peak_results.(signal_name).relative_percentages = relative_percentages;
+    
+    % 绘制峰值对比柱形图
+    [~, ~] = plot_peak_comparison_universal(peak_values, processed_data.labels, signal_info, config);
+end
+
+% 保存峰值结果
+if config.save_plots
+    save_path = fullfile(config.output_folder, 'peak_results.mat');
+    save(save_path, 'peak_results');
+end
 
 end
 
