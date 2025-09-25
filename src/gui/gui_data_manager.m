@@ -275,22 +275,41 @@ function importFromFile(~, ~, handles)
                 
                 if is_valid
                     handles.data{end+1} = field_data;
-                    
+
                     % 生成更好的标签
                     if startsWith(lower(field_name), 'out')
                         label = generateDataLabelFromOut(field_name);
                     else
                         label = field_name;
                     end
-                    
+
                     % 不再添加文件名信息，避免标签过长
                     handles.labels{end+1} = label;
-                    
+
                     found_data = true;
                     gui_utils('addLog', handles, sprintf('✓ 从 %s 导入: %s', filename{i}, field_name));
                     gui_utils('addLog', handles, sprintf('  数据信息: %s', validation_info));
                 else
-                    gui_utils('addLog', handles, sprintf('⚠ 跳过 %s.%s: %s', filename{i}, field_name, validation_info));
+                    % 数据无效，尝试转换
+                    gui_utils('addLog', handles, sprintf('⚠ 数据格式不合法，尝试转换 %s.%s', filename{i}, field_name));
+                    converted_data = attemptDataConversion(field_data, field_name, handles);
+
+                    if ~isempty(converted_data)
+                        handles.data{end+1} = converted_data;
+
+                        % 生成标签
+                        if startsWith(lower(field_name), 'out')
+                            label = generateDataLabelFromOut(field_name);
+                        else
+                            label = field_name;
+                        end
+                        handles.labels{end+1} = label;
+
+                        found_data = true;
+                        gui_utils('addLog', handles, sprintf('✓ 转换成功并导入: %s.%s', filename{i}, field_name));
+                    else
+                        gui_utils('addLog', handles, sprintf('✗ 转换失败，跳过 %s.%s: %s', filename{i}, field_name, validation_info));
+                    end
                 end
             end
             
@@ -482,7 +501,188 @@ function clearAllData(~, ~, handles)
     
     updateDataList(handles);
     gui_utils('addLog', handles, '已清除全部数据');
-    
+
     % 保存handles
     set(handles.fig, 'UserData', handles);
+end
+
+%% 尝试转换不合法的数据
+function converted_data = attemptDataConversion(field_data, field_name, handles)
+    converted_data = [];
+
+    try
+        % 检查是否是Simulink.SimulationOutput类型
+        if isa(field_data, 'Simulink.SimulationOutput')
+            gui_utils('addLog', handles, sprintf('  检测到Simulink.SimulationOutput，开始转换...'));
+            converted_data = convertSimulinkVariableForGUI(field_data, field_name, handles);
+        else
+            gui_utils('addLog', handles, sprintf('  数据类型 %s 不支持自动转换', class(field_data)));
+        end
+    catch ME
+        gui_utils('addLog', handles, sprintf('  转换过程出错: %s', ME.message));
+        converted_data = [];
+    end
+end
+
+%% GUI专用的Simulink数据转换函数
+function converted_struct = convertSimulinkVariableForGUI(sim_output, var_name, handles)
+    converted_struct = struct();
+
+    try
+        gui_utils('addLog', handles, sprintf('  分析 %s 的结构...', var_name));
+
+        % 获取所有属性
+        props = properties(sim_output);
+        gui_utils('addLog', handles, sprintf('  找到 %d 个属性', length(props)));
+
+        %% 1. 寻找时间向量
+        time_found = false;
+
+        % 方法1: 直接查找时间字段
+        if isprop(sim_output, 'tout')
+            converted_struct.tout = sim_output.tout;
+            gui_utils('addLog', handles, sprintf('  ✓ 找到时间向量 (tout): %d 点', length(sim_output.tout)));
+            time_found = true;
+        elseif isprop(sim_output, 'time')
+            converted_struct.tout = sim_output.time;
+            gui_utils('addLog', handles, sprintf('  ✓ 找到时间向量 (time): %d 点', length(sim_output.time)));
+            time_found = true;
+        end
+
+        % 方法2: 从其他属性中寻找时间向量
+        if ~time_found
+            gui_utils('addLog', handles, sprintf('  未找到直接时间字段，搜索其他属性...'));
+            for i = 1:length(props)
+                prop_name = props{i};
+                try
+                    prop_data = sim_output.(prop_name);
+                    if isobject(prop_data)
+                        if isprop(prop_data, 'Time') && isnumeric(prop_data.Time)
+                            converted_struct.tout = prop_data.Time;
+                            gui_utils('addLog', handles, sprintf('  ✓ 从 %s.Time 中提取时间向量: %d 点', prop_name, length(prop_data.Time)));
+                            time_found = true;
+                            break;
+                        elseif isprop(prop_data, 'time') && isnumeric(prop_data.time)
+                            converted_struct.tout = prop_data.time;
+                            gui_utils('addLog', handles, sprintf('  ✓ 从 %s.time 中提取时间向量: %d 点', prop_name, length(prop_data.time)));
+                            time_found = true;
+                            break;
+                        end
+                    end
+                catch
+                    continue;
+                end
+            end
+        end
+
+        % 如果仍然没有找到时间向量
+        if ~time_found
+            gui_utils('addLog', handles, sprintf('  ✗ 错误: 无法找到时间向量'));
+            converted_struct = [];
+            return;
+        end
+
+        %% 2. 处理所有其他属性
+        signal_count = 0;
+        for i = 1:length(props)
+            prop_name = props{i};
+
+            % 跳过已处理的时间字段
+            if strcmpi(prop_name, 'tout') || strcmpi(prop_name, 'time')
+                continue;
+            end
+
+            try
+                prop_data = sim_output.(prop_name);
+
+                if isnumeric(prop_data)
+                    % 直接是数值数据
+                    converted_struct.(prop_name) = prop_data;
+                    signal_count = signal_count + 1;
+
+                elseif isobject(prop_data)
+                    % 处理对象类型的数据
+                    extracted = extractFromObjectForGUI(prop_data, prop_name, handles);
+                    if ~isempty(extracted)
+                        % 将提取的字段合并到结果中
+                        field_names = fieldnames(extracted);
+                        for j = 1:length(field_names)
+                            field_name = field_names{j};
+                            converted_struct.(field_name) = extracted.(field_name);
+                            signal_count = signal_count + 1;
+                        end
+                    end
+
+                elseif isstruct(prop_data)
+                    % 如果是结构体，直接复制
+                    converted_struct.(prop_name) = prop_data;
+                    signal_count = signal_count + 1;
+                end
+
+            catch ME2
+                gui_utils('addLog', handles, sprintf('  ! 警告: 无法处理属性 %s: %s', prop_name, ME2.message));
+            end
+        end
+
+        gui_utils('addLog', handles, sprintf('  ✓ 转换完成: 1个时间向量 + %d个信号字段', signal_count));
+
+        % 显示最终结果字段
+        final_fields = fieldnames(converted_struct);
+        gui_utils('addLog', handles, sprintf('  最终字段: %s', strjoin(final_fields, ', ')));
+
+    catch ME
+        gui_utils('addLog', handles, sprintf('  ✗ 转换出错: %s', ME.message));
+        converted_struct = [];
+    end
+end
+
+%% GUI专用的从对象中提取数据的辅助函数
+function extracted = extractFromObjectForGUI(obj, base_name, handles)
+    extracted = struct();
+
+    try
+        % 检查常见的数据属性
+        if isprop(obj, 'Data') && isnumeric(obj.Data)
+            extracted.(base_name) = obj.Data;
+            gui_utils('addLog', handles, sprintf('  ✓ 提取对象数据: %s.Data', base_name));
+
+        elseif isprop(obj, 'Values') && isnumeric(obj.Values)
+            extracted.(base_name) = obj.Values;
+            gui_utils('addLog', handles, sprintf('  ✓ 提取对象值: %s.Values', base_name));
+
+        elseif isprop(obj, 'signals')
+            % 处理Dataset类型的对象
+            signals = obj.signals;
+            if isstruct(signals)
+                signal_names = fieldnames(signals);
+                gui_utils('addLog', handles, sprintf('  ✓ 找到Dataset对象，包含 %d 个信号', length(signal_names)));
+                for i = 1:length(signal_names)
+                    signal_name = signal_names{i};
+                    signal_data = signals.(signal_name);
+                    if isnumeric(signal_data)
+                        extracted.(signal_name) = signal_data;
+                    end
+                end
+            end
+
+        else
+            % 尝试其他可能的属性
+            obj_props = properties(obj);
+            for i = 1:length(obj_props)
+                prop_name = obj_props{i};
+                try
+                    prop_data = obj.(prop_name);
+                    if isnumeric(prop_data) && ~isempty(prop_data)
+                        field_name = sprintf('%s_%s', base_name, prop_name);
+                        extracted.(field_name) = prop_data;
+                    end
+                catch
+                    continue;
+                end
+            end
+        end
+
+    catch ME
+        gui_utils('addLog', handles, sprintf('  ! 从对象 %s 提取数据时出错: %s', base_name, ME.message));
+    end
 end

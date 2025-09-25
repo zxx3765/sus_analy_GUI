@@ -24,8 +24,13 @@ try
     key_functions = {
         'suspension_analysis_tool';
         'plot_frequency_response_universal';
+        'plot_time_response_universal';
         'quick_config';
         'analysis_half_v2';
+        'suspension_analysis_gui';
+        'convert_simulink_output';
+        'calculate_rms_universal';
+        'plot_extreme_comparison_universal';
     };
     
     for i = 1:length(key_functions)
@@ -53,9 +58,14 @@ fprintf('\n🔧 **自定义分析**:\n');
 fprintf('   config = quick_config(''half'', ''cn'', true);\n');
 fprintf('   suspension_analysis_tool(data_sets, labels, ''Config'', config);\n');
 
-fprintf('\n🧪 **测试功能**:\n');
-fprintf('   test_optimized_tools                %% 完整功能测试\n');
-fprintf('   test_functions_fix                  %% 基础函数测试\n');
+fprintf('\n🧪 **测试与诊断**:\n');
+fprintf('   test_data_role_mapping              %% 数据角色映射测试\n');
+fprintf('   quick_data_check                    %% 快速数据结构验证\n');
+fprintf('   diagnose_data_structure             %% 详细数据格式诊断\n');
+
+fprintf('\n🔧 **数据转换工具**:\n');
+fprintf('   convert_simulink_output             %% 转换Simulink输出格式\n');
+fprintf('   convert_your_data                   %% 自定义数据文件转换\n');
 
 fprintf('\n📚 **学习资源**:\n');
 fprintf('   example_usage                       %% 详细使用示例\n');
@@ -63,12 +73,15 @@ fprintf('   open(''README.md'')                   %% 项目文档\n');
 
 fprintf('\n🗂️ **项目结构**:\n');
 fprintf('   src/models/          - 数学模型 (状态空间、观测器)\n');
-fprintf('   src/analysis/        - 分析工具和绘图函数\n');
+fprintf('   src/analysis/core/   - 核心分析引擎和配置管理\n');
+fprintf('   src/analysis/plotting/ - 通用绘图函数 (支持中英文)\n');
+fprintf('   src/analysis/legacy/ - 原版分析函数 (向后兼容)\n');
 fprintf('   src/scripts/         - 用户调用脚本\n');
-fprintf('   src/gui/             - 图形化界面 (新增)\n');
+fprintf('   src/gui/             - 模块化图形界面组件\n');
+fprintf('   tools/               - 数据转换和诊断工具\n');
 fprintf('   simulink/           - Simulink模型文件\n');
 fprintf('   docs/               - 文档和示例\n');
-fprintf('   tests/              - 测试脚本\n');
+fprintf('   results/            - 分析结果输出目录\n');
 
 fprintf('\n========================================\n');
 fprintf('项目初始化完成！开始您的悬架分析之旅吧！\n');
@@ -77,7 +90,7 @@ fprintf('========================================\n');
 %% 4. 选择启动方式
 fprintf('\n选择启动方式:\n');
 fprintf('1. 图形界面 (GUI) - 新用户推荐\n');
-fprintf('2. 快速测试工具\n');
+fprintf('2. 快速数据检查和测试\n');
 fprintf('3. 仅完成初始化\n');
 
 choice = input('请选择 (1-3): ', 's');
@@ -92,10 +105,16 @@ switch choice
             fprintf('您可以稍后手动运行: launch_gui\n');
         end
         
-    case '2' 
-        fprintf('\n正在运行快速测试...\n');
+    case '2'
+        fprintf('\n正在运行快速数据检查和测试...\n');
         try
-            test_functions_fix;
+            if exist('quick_data_check', 'file')
+                quick_data_check;
+            elseif exist('test_data_role_mapping', 'file')
+                test_data_role_mapping;
+            else
+                fprintf('测试文件不可用，跳过测试步骤。\n');
+            end
         catch ME
             fprintf('测试失败: %s\n', ME.message);
         end
