@@ -165,6 +165,15 @@ if config.close_figures
     fprintf('  ✓ 图窗已关闭\n');
 end
 
+% 导出绘图数据
+if config.save_to_workspace || config.save_mat_files
+    plot_data = struct();
+    plot_data.peak_values = peak_values;
+    plot_data.relative_percentages = relative_percentages;
+
+    export_plot_data(plot_data, signal_info, legend_labels, config, 'peak');
+end
+
 end
 
 function english_labels = convertLabelsToEnglish(chinese_labels)

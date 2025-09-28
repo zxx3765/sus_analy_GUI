@@ -34,6 +34,8 @@ defaults.language = 'cn';
 defaults.save_plots = true;
 defaults.save_fig_files = true;     % 是否保存.fig文件
 defaults.close_figures = true;      % 保存后是否关闭图窗
+defaults.save_to_workspace = false; % 是否保存绘图数据到workspace
+defaults.save_mat_files = false;    % 是否保存绘图数据为.mat文件
 defaults.output_folder = '';  % 空字符串表示自动生成时间戳文件夹
 defaults.use_timestamp = true;  % 默认使用时间戳文件夹
 defaults.plot_format = 'png';
@@ -49,7 +51,7 @@ params = defaults;
 is_positional = true;
 if nargin > 0
     % 如果任何参数是名称-值对的名称，则为名称-值模式
-    name_value_names = {'ModelType', 'Language', 'SavePlots', 'SaveFigFiles', 'CloseFigures', 'OutputFolder', 'UseTimestamp', 'PlotFormat', 'RefFreq', 'FontSize', 'LineWidth', 'FigSize'};
+    name_value_names = {'ModelType', 'Language', 'SavePlots', 'SaveFigFiles', 'CloseFigures', 'SaveToWorkspace', 'SaveMatFiles', 'OutputFolder', 'UseTimestamp', 'PlotFormat', 'RefFreq', 'FontSize', 'LineWidth', 'FigSize'};
     
     for i = 1:nargin
         if ischar(varargin{i}) || isstring(varargin{i})
@@ -85,6 +87,8 @@ else
     addParameter(p, 'SavePlots', defaults.save_plots, @islogical);
     addParameter(p, 'SaveFigFiles', defaults.save_fig_files, @islogical);
     addParameter(p, 'CloseFigures', defaults.close_figures, @islogical);
+    addParameter(p, 'SaveToWorkspace', defaults.save_to_workspace, @islogical);
+    addParameter(p, 'SaveMatFiles', defaults.save_mat_files, @islogical);
     addParameter(p, 'OutputFolder', defaults.output_folder, @ischar);
     addParameter(p, 'UseTimestamp', defaults.use_timestamp, @islogical);
     addParameter(p, 'PlotFormat', defaults.plot_format, @(x) any(validatestring(x, {'png', 'eps', 'pdf'})));
@@ -100,6 +104,8 @@ else
     params.save_plots = p.Results.SavePlots;
     params.save_fig_files = p.Results.SaveFigFiles;
     params.close_figures = p.Results.CloseFigures;
+    params.save_to_workspace = p.Results.SaveToWorkspace;
+    params.save_mat_files = p.Results.SaveMatFiles;
     params.output_folder = p.Results.OutputFolder;
     params.use_timestamp = p.Results.UseTimestamp;
     params.plot_format = p.Results.PlotFormat;
@@ -117,6 +123,8 @@ config.language = params.language;
 config.save_plots = params.save_plots;
 config.save_fig_files = params.save_fig_files;
 config.close_figures = params.close_figures;
+config.save_to_workspace = params.save_to_workspace;
+config.save_mat_files = params.save_mat_files;
 config.plot_format = params.plot_format;
 
 % 处理输出文件夹设置

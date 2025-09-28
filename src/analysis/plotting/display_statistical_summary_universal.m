@@ -65,8 +65,32 @@ if config.save_plots
                    stats_results.(signal_name).rms(j));
         end
     end
-    
+
     fclose(fileID);
+end
+
+% 导出绘图数据到workspace和.mat文件
+if config.save_to_workspace || config.save_mat_files
+    % 遍历所有信号，为每个信号创建数据导出
+    signal_names = fieldnames(stats_results);
+    for i = 1:length(signal_names)
+        signal_name = signal_names{i};
+
+        % 创建信号信息（用于导出函数）
+        if strcmp(config.language, 'cn')
+            signal_label = signal_name;  % 使用信号名作为标签
+            signal_info_local = {signal_name, '', 0, signal_label, signal_label, ''};
+        else
+            signal_label = signal_name;
+            signal_info_local = {signal_name, '', 0, signal_label, signal_label, ''};
+        end
+
+        % 组织统计数据
+        plot_data = struct();
+        plot_data.stats_data = stats_results.(signal_name);
+
+        export_plot_data(plot_data, signal_info_local, labels, config, 'stat');
+    end
 end
 
 end

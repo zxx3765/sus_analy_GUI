@@ -205,4 +205,13 @@ if config.close_figures
     fprintf('  ✓ 图窗已关闭\n');
 end
 
+% 导出绘图数据
+if config.save_to_workspace || config.save_mat_files
+    plot_data = struct();
+    plot_data.signal_data = signal_data;
+    plot_data.time_vector = time_vector;
+
+    export_plot_data(plot_data, signal_info, legend_labels, config, 'time');
+end
+
 end

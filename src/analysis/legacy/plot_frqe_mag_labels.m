@@ -1,4 +1,4 @@
-function [Mag_def_tire,f_def_tire] = plot_frqe_mag_labels(sig_mat,xr_mat,labels,pic_text)
+function [Mag_def_tire_matrix,f_def_tire] = plot_frqe_mag_labels(sig_mat,xr_mat,labels,pic_text)
 % 绘制轮胎动行程的幅频特性曲线
     nfft=4096*2;
     window=hanning(nfft);

@@ -295,4 +295,13 @@ if config.close_figures
     fprintf('  ✓ 图窗已关闭\n');
 end
 
+% 导出绘图数据
+if config.save_to_workspace || config.save_mat_files
+    plot_data = struct();
+    plot_data.Mag_matrix = Mag_matrix;
+    plot_data.f_freq = f_freq;
+
+    export_plot_data(plot_data, signal_info, legend_labels, config, 'frequency');
+end
+
 end
