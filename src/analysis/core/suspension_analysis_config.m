@@ -61,7 +61,7 @@ config.data_fields.time = 'tout';
 config.data_fields.outputs = 'y_bus';      % 系统输出
 config.data_fields.road_input = 'xr';      % 路面输入
 config.data_fields.states = 'real_x_bus';  % 真实状态
-config.data_fields.body_state_bus = 'body_state';  %车身状态
+config.data_fields.body_state_bus = 'body_state_bus';  %车身状态
 config.data_fields.unsprung_state_bus = 'unsprung_state';  %簧载质量状态
 
 % 输出信号索引映射 (基于y_bus)
@@ -96,8 +96,8 @@ config.analysis_signals = {
     {'front_sprung_acc', 'outputs', config.signals.front_sprung_acc, '前簧载质量加速度', 'Front Sprung Mass Acceleration', 'm/s²'};
     {'rear_sprung_acc', 'outputs', config.signals.rear_sprung_acc, '后簧载质量加速度', 'Rear Sprung Mass Acceleration', 'm/s²'};
     {'body_acc', 'outputs', config.signals.body_acc, '车身质心加速度', 'Body Center Acceleration', 'm/s²'};
-    {'body_x', 'outputs', config.signals.body_acc, '车身质心位移', 'Body Center Displacement', 'm'};
-    {'body_v', 'outputs', config.signals.body_acc, '车身质心速度', 'Body Center Velocity', 'm/s'};
+    {'body_x', 'body_state_bus', config.body_state.xs, '车身质心位移', 'Body Center Displacement', 'm'};
+    {'body_v', 'body_state_bus', config.body_state.vs, '车身质心速度', 'Body Center Velocity', 'm/s'};
     {'pitch_acc', 'outputs', config.states.front_susp_def, '车身俯仰角加速度', 'Body Pitch Acceleration', 'rad/s²'};
     {'pitch_angle', 'outputs', config.body_state.pitch, '车身俯仰角', 'Body Pitch Angle', 'rad'};
     {'pitch_v', 'outputs', config.body_state.vpitch, '车身俯仰角速度', 'Body Pitch Velocity', 'rad/s'};
