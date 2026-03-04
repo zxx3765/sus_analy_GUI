@@ -66,6 +66,7 @@ Desktop.ini
 *.temp
 *.bak
 *.backup
+resources/
 
 # IDE和编辑器文件
 .vscode/
