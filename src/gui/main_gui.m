@@ -135,10 +135,15 @@ function updateGUIFromConfig(handles)
     
     % 模型类型
     if isfield(handles, 'modelTypePopup')
-        if strcmp(config.model_type, 'half')
-            set(handles.modelTypePopup, 'Value', 1);
-        else
-            set(handles.modelTypePopup, 'Value', 2);
+        switch config.model_type
+            case 'half'
+                set(handles.modelTypePopup, 'Value', 1);
+            case 'quarter'
+                set(handles.modelTypePopup, 'Value', 2);
+            case 'full'
+                set(handles.modelTypePopup, 'Value', 3);
+            otherwise
+                set(handles.modelTypePopup, 'Value', 1);
         end
     end
     

@@ -1,7 +1,7 @@
 function config = suspension_analysis_config(model_type)
 %% 悬架分析通用配置文件
 % 输入参数: 
-%   model_type: 'half' (半车模型) 或 'quarter' (四分之一车模型)
+%   model_type: 'half' (半车模型) 或 'quarter' (四分之一车模型) 或 'full' (整车模型)
 % 输出: 配置结构体
 
 if nargin < 1
@@ -47,6 +47,8 @@ switch lower(model_type)
         config = set_half_car_config(config);
     case 'quarter'
         config = set_quarter_car_config(config);
+    case 'full'
+        config = set_full_car_config(config);
     otherwise
         error('不支持的模型类型: %s', model_type);
 end
@@ -158,6 +160,113 @@ config.analysis_signals = {
     {'reward', 'reward', config.reward.total, '奖励信号', 'Reward Signal', ''};
     {'road_input', 'road_input', config.road.input, '路面输入', 'Road Input', 'm'};
     {'velocity_def', 'velocity_def', config.velocity_def.value, '速度缺陷', 'Velocity Defect', 'm/s'};
+};
+
+end
+
+%% 整车模型配置 (7-DOF)
+function config = set_full_car_config(config)
+
+% 数据字段映射配置
+config.data_fields.time = 'tout';
+config.data_fields.outputs = 'y_bus';      % 系统输出（保留）
+config.data_fields.road_input = 'xr_bus';  % 路面输入总线（4列）
+config.data_fields.states = 'real_x_bus';  % 真实状态
+config.data_fields.body_bus = 'body_bus';  % 车身状态总线（9列）
+config.data_fields.wheel_bus = 'wheel_bus'; % 轮端状态总线（12列）
+config.data_fields.corner_bus = 'corner_bus'; % 簧载角点状态总线（8列）
+config.data_fields.body_state_bus = 'body_state_bus';  % 保留兼容
+config.data_fields.unsprung_state_bus = 'unsprung_state';  % 保留兼容
+
+% 车身状态总线索引 (基于body_bus: XS, VS, as, theta, vtheta, atheta, phi, vphi, aphi)
+config.body_state.xs = 1;                  % XS - 车身垂向位移
+config.body_state.vs = 2;                  % VS - 车身垂向速度
+config.body_state.as = 3;                  % as - 车身垂向加速度
+config.body_state.theta = 4;               % theta - 俯仰角
+config.body_state.vtheta = 5;              % vtheta - 俯仰角速度
+config.body_state.atheta = 6;              % atheta - 俯仰角加速度
+config.body_state.phi = 7;                 % phi - 侧倾角
+config.body_state.vphi = 8;               % vphi - 侧倾角速度
+config.body_state.aphi = 9;               % aphi - 侧倾角加速度
+
+% 轮端状态总线索引 (基于wheel_bus: xu_FL, vu_FL, au_FL, xu_FR, vu_FR, au_FR,
+%                                   xu_RL, vu_RL, au_RL, xu_RR, vu_RR, au_RR)
+config.wheel.xu_fl = 1;                    % xu_FL - 左前非簧载位移
+config.wheel.vu_fl = 2;                    % vu_FL - 左前非簧载速度
+config.wheel.au_fl = 3;                    % au_FL - 左前非簧载加速度
+config.wheel.xu_fr = 4;                    % xu_FR - 右前非簧载位移
+config.wheel.vu_fr = 5;                    % vu_FR - 右前非簧载速度
+config.wheel.au_fr = 6;                    % au_FR - 右前非簧载加速度
+config.wheel.xu_rl = 7;                    % xu_RL - 左后非簧载位移
+config.wheel.vu_rl = 8;                    % vu_RL - 左后非簧载速度
+config.wheel.au_rl = 9;                    % au_RL - 左后非簧载加速度
+config.wheel.xu_rr = 10;                   % xu_RR - 右后非簧载位移
+config.wheel.vu_rr = 11;                   % vu_RR - 右后非簧载速度
+config.wheel.au_rr = 12;                   % au_RR - 右后非簧载加速度
+
+% 簧载角点状态总线索引 (基于corner_bus: xb_FL, xb_FR, xb_RL, xb_RR,
+%                                       vb_FL, vb_FR, vb_RL, vb_RR)
+config.corner.xb_fl = 1;                   % xb_FL - 左前簧载位移
+config.corner.xb_fr = 2;                   % xb_FR - 右前簧载位移
+config.corner.xb_rl = 3;                   % xb_RL - 左后簧载位移
+config.corner.xb_rr = 4;                   % xb_RR - 右后簧载位移
+config.corner.vb_fl = 5;                   % vb_FL - 左前簧载速度
+config.corner.vb_fr = 6;                   % vb_FR - 右前簧载速度
+config.corner.vb_rl = 7;                   % vb_RL - 左后簧载速度
+config.corner.vb_rr = 8;                   % vb_RR - 右后簧载速度
+
+% 状态信号索引映射 (基于real_x_bus) — 占位符索引
+config.states.lf_tire_def = 1;             % 左前轮胎变形
+config.states.rf_tire_def = 2;             % 右前轮胎变形
+config.states.lr_tire_def = 3;             % 左后轮胎变形
+config.states.rr_tire_def = 4;             % 右后轮胎变形
+config.states.lf_susp_def = 5;             % 左前悬架变形
+config.states.rf_susp_def = 6;             % 右前悬架变形
+config.states.lr_susp_def = 7;             % 左后悬架变形
+config.states.rr_susp_def = 8;             % 右后悬架变形
+
+% 路面输入索引映射 (基于xr_bus: xr_FL, xr_RL, xr_FR, xr_RR)
+config.road.lf_input = 1;                  % xr_FL - 左前轮路面输入
+config.road.lr_input = 2;                  % xr_RL - 左后轮路面输入
+config.road.rf_input = 3;                  % xr_FR - 右前轮路面输入
+config.road.rr_input = 4;                  % xr_RR - 右后轮路面输入
+
+% 分析信号配置 — 21个信号
+config.analysis_signals = {
+    % {信号名称, 数据来源, 索引, 中文标签, 英文标签, 单位}
+
+    % 车身（3个）— 来自body_bus
+    {'body_acc', 'body_bus', config.body_state.as, '车身质心垂向加速度', 'Body Vertical Acceleration', 'm/s²'};
+    {'body_x', 'body_bus', config.body_state.xs, '车身质心垂向位移', 'Body Vertical Displacement', 'm'};
+    {'body_v', 'body_bus', config.body_state.vs, '车身质心垂向速度', 'Body Vertical Velocity', 'm/s'};
+
+    % 俯仰（3个）— 来自body_bus
+    {'pitch_acc', 'body_bus', config.body_state.atheta, '俯仰角加速度', 'Pitch Angular Acceleration', 'rad/s²'};
+    {'pitch_angle', 'body_bus', config.body_state.theta, '俯仰角', 'Pitch Angle', 'rad'};
+    {'pitch_v', 'body_bus', config.body_state.vtheta, '俯仰角速度', 'Pitch Angular Velocity', 'rad/s'};
+
+    % 侧倾（3个）— 来自body_bus
+    {'roll_acc', 'body_bus', config.body_state.aphi, '侧倾角加速度', 'Roll Angular Acceleration', 'rad/s²'};
+    {'roll_angle', 'body_bus', config.body_state.phi, '侧倾角', 'Roll Angle', 'rad'};
+    {'roll_v', 'body_bus', config.body_state.vphi, '侧倾角速度', 'Roll Angular Velocity', 'rad/s'};
+
+    % 非簧载质量加速度（4个）— 来自wheel_bus
+    {'lf_unsprung_acc', 'wheel_bus', config.wheel.au_fl, '左前非簧载质量加速度', 'LF Unsprung Mass Acceleration', 'm/s²'};
+    {'rf_unsprung_acc', 'wheel_bus', config.wheel.au_fr, '右前非簧载质量加速度', 'RF Unsprung Mass Acceleration', 'm/s²'};
+    {'lr_unsprung_acc', 'wheel_bus', config.wheel.au_rl, '左后非簧载质量加速度', 'LR Unsprung Mass Acceleration', 'm/s²'};
+    {'rr_unsprung_acc', 'wheel_bus', config.wheel.au_rr, '右后非簧载质量加速度', 'RR Unsprung Mass Acceleration', 'm/s²'};
+
+    % 悬架动行程（4个）— 来自real_x_bus
+    {'lf_susp_def', 'states', config.states.lf_susp_def, '左前悬架动行程', 'LF Suspension Deflection', 'm'};
+    {'rf_susp_def', 'states', config.states.rf_susp_def, '右前悬架动行程', 'RF Suspension Deflection', 'm'};
+    {'lr_susp_def', 'states', config.states.lr_susp_def, '左后悬架动行程', 'LR Suspension Deflection', 'm'};
+    {'rr_susp_def', 'states', config.states.rr_susp_def, '右后悬架动行程', 'RR Suspension Deflection', 'm'};
+
+    % 轮胎动变形（4个）— 来自real_x_bus
+    {'lf_tire_def', 'states', config.states.lf_tire_def, '左前轮胎动变形', 'LF Tire Deflection', 'm'};
+    {'rf_tire_def', 'states', config.states.rf_tire_def, '右前轮胎动变形', 'RF Tire Deflection', 'm'};
+    {'lr_tire_def', 'states', config.states.lr_tire_def, '左后轮胎动变形', 'LR Tire Deflection', 'm'};
+    {'rr_tire_def', 'states', config.states.rr_tire_def, '右后轮胎动变形', 'RR Tire Deflection', 'm'};
 };
 
 end

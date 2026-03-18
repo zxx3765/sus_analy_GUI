@@ -5,7 +5,7 @@ function suspension_analysis_tool(data_sets, labels, varargin)
 %   data_sets: 仿真数据集合 (cell array 或 struct array)
 %   labels: 各数据集的标签 (cell array of strings)
 %   varargin: 可选参数
-%     - 'ModelType': 'half' (默认) 或 'quarter'
+%     - 'ModelType': 'half' (默认), 'quarter' 或 'full'
 %     - 'Config': 自定义配置结构体
 %     - 'OutputFolder': 结果输出文件夹
 %     - 'Language': 'cn' (默认) 或 'en'
@@ -27,7 +27,7 @@ function suspension_analysis_tool(data_sets, labels, varargin)
 p = inputParser;
 addRequired(p, 'data_sets');
 addRequired(p, 'labels');
-addParameter(p, 'ModelType', 'half', @(x) any(validatestring(x, {'half', 'quarter'})));
+addParameter(p, 'ModelType', 'half', @(x) any(validatestring(x, {'half', 'quarter', 'full'})));
 addParameter(p, 'Config', [], @isstruct);
 addParameter(p, 'OutputFolder', 'results', @ischar);
 addParameter(p, 'Language', 'cn', @(x) any(validatestring(x, {'cn', 'en'})));
@@ -378,6 +378,9 @@ if strcmp(config.model_type, 'half')
 elseif strcmp(config.model_type, 'quarter')
     % 四分之一车模型
     road_data = extract_signal_data(processed_data, 'road_input', config.road.input, config);
+elseif strcmp(config.model_type, 'full')
+    % 整车模型使用左前轮路面输入作为频响参考
+    road_data = extract_signal_data(processed_data, 'road_input', config.road.lf_input, config);
 end
 
 end

@@ -5,11 +5,12 @@ function config = quick_config(varargin)
 % 使用方法:
 %   config = quick_config('half', 'cn', true)  % 半车、中文、保存图片
 %   config = quick_config('quarter')           % 四分之一车、默认设置
+%   config = quick_config('full', 'cn', true)  % 整车、中文、保存图片
 %   config = quick_config('ModelType', 'half', 'Language', 'en', 'SavePlots', false)
 %
 % 参数说明:
 %   位置参数 (按顺序):
-%     1. model_type: 'half' 或 'quarter'
+%     1. model_type: 'half', 'quarter' 或 'full'
 %     2. language: 'cn' 或 'en' 
 %     3. save_plots: true 或 false
 %     4. output_folder: 输出文件夹名称
@@ -82,7 +83,7 @@ elseif nargin <= 4 && is_positional
 else
     % 名称-值参数对模式
     p = inputParser;
-    addParameter(p, 'ModelType', defaults.model_type, @(x) any(validatestring(x, {'half', 'quarter'})));
+    addParameter(p, 'ModelType', defaults.model_type, @(x) any(validatestring(x, {'half', 'quarter', 'full'})));
     addParameter(p, 'Language', defaults.language, @(x) any(validatestring(x, {'cn', 'en'})));
     addParameter(p, 'SavePlots', defaults.save_plots, @islogical);
     addParameter(p, 'SaveFigFiles', defaults.save_fig_files, @islogical);

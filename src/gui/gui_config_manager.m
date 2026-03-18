@@ -47,7 +47,7 @@ function handles = gui_config_manager(parent, handles)
     
     handles.modelTypePopup = uicontrol('Parent', configPanel, ...
                                       'Style', 'popupmenu', ...
-                                      'String', {'半车模型 (Half-car)', '四分之一车模型 (Quarter-car)'}, ...
+                                      'String', {'半车模型 (Half-car)', '四分之一车模型 (Quarter-car)', '整车模型 (Full-car)'}, ...
                                       'Position', [95, y_pos-7, 190, 25], ...
                                       'FontSize', 9, ...
                                       'BackgroundColor', 'white', ...
@@ -302,7 +302,7 @@ function updateConfig(src, ~, handles)
     
     try
         % 获取GUI控件值
-        model_types = {'half', 'quarter'};
+        model_types = {'half', 'quarter', 'full'};
         model_type = model_types{get(handles.modelTypePopup, 'Value')};
         
         languages = {'cn', 'en'};
@@ -523,13 +523,18 @@ function updateGUIFromConfig(handles)
     
     % 模型类型
     if isfield(handles, 'modelTypePopup')
-        if strcmp(config.model_type, 'half')
-            set(handles.modelTypePopup, 'Value', 1);
-        else
-            set(handles.modelTypePopup, 'Value', 2);
+        switch config.model_type
+            case 'half'
+                set(handles.modelTypePopup, 'Value', 1);
+            case 'quarter'
+                set(handles.modelTypePopup, 'Value', 2);
+            case 'full'
+                set(handles.modelTypePopup, 'Value', 3);
+            otherwise
+                set(handles.modelTypePopup, 'Value', 1);
         end
     end
-    
+
     % 语言
     if isfield(handles, 'languagePopup')
         if strcmp(config.language, 'cn')
@@ -538,16 +543,16 @@ function updateGUIFromConfig(handles)
             set(handles.languagePopup, 'Value', 2);
         end
     end
-    
+
     % 保存选项
     if isfield(handles, 'savePlotsCheck')
         set(handles.savePlotsCheck, 'Value', config.save_plots);
     end
-    
+
     if isfield(config, 'save_fig_files') && isfield(handles, 'saveFigFilesCheck')
         set(handles.saveFigFilesCheck, 'Value', config.save_fig_files);
     end
-    
+
     if isfield(config, 'close_figures') && isfield(handles, 'closeFiguresCheck')
         set(handles.closeFiguresCheck, 'Value', config.close_figures);
     end

@@ -515,6 +515,30 @@ function signals = getDefaultSignals(model_type)
                 '悬架动行程',
                 '轮胎动变形'
             };
+        case 'full'
+            signals = {
+                '车身质心垂向加速度',
+                '车身质心垂向位移',
+                '车身质心垂向速度',
+                '俯仰角加速度',
+                '俯仰角',
+                '俯仰角速度',
+                '侧倾角加速度',
+                '侧倾角',
+                '侧倾角速度',
+                '左前非簧载质量加速度',
+                '右前非簧载质量加速度',
+                '左后非簧载质量加速度',
+                '右后非簧载质量加速度',
+                '左前悬架动行程',
+                '右前悬架动行程',
+                '左后悬架动行程',
+                '右后悬架动行程',
+                '左前轮胎动变形',
+                '右前轮胎动变形',
+                '左后轮胎动变形',
+                '右后轮胎动变形'
+            };
         otherwise
             signals = {'(无可用信号)'};
     end
@@ -527,6 +551,8 @@ function name = getModelTypeName(model_type)
             name = '半车';
         case 'quarter'
             name = '四分之一车';
+        case 'full'
+            name = '整车';
         otherwise
             name = '未知';
     end
