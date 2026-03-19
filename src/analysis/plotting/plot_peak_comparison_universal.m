@@ -61,7 +61,14 @@ fprintf('%.6f\n', peak_values);
 % 图窗设置
 figure_size = ifelse(isfield(config, 'plot') && isfield(config.plot, 'figure_size'), ...
                      config.plot.figure_size, [800, 600]);
-fig_handle = figure('Position', [100, 100, figure_size]);
+% 构建窗口标题
+if isfield(config, 'plot') && isfield(config.plot, 'figure_name_prefix') && ~isempty(config.plot.figure_name_prefix)
+    fig_name = sprintf('%s - %s', config.plot.figure_name_prefix, title_str);
+else
+    fig_name = title_str;
+end
+
+fig_handle = figure('Name', fig_name, 'Position', [100, 100, figure_size]);
 set(fig_handle, 'PaperType', 'A4', 'PaperOrientation', 'landscape', ...
                 'PaperUnits', 'normalized', 'PaperPosition', [0 0 1 1]);
 

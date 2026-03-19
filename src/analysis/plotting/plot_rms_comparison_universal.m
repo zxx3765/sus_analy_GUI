@@ -64,8 +64,15 @@ else
     figure_size = [800, 600];  % 默认大小
 end
 
+% 构建窗口标题
+if isfield(config, 'plot') && isfield(config.plot, 'figure_name_prefix') && ~isempty(config.plot.figure_name_prefix)
+    fig_name = sprintf('%s - %s', config.plot.figure_name_prefix, title_str);
+else
+    fig_name = title_str;
+end
+
 % 创建新图窗
-fig_handle = figure('Position', [100, 100, figure_size]);
+fig_handle = figure('Name', fig_name, 'Position', [100, 100, figure_size]);
 
 % 设置打印属性以避免剪切警告
 set(fig_handle, 'PaperType', 'A4');
