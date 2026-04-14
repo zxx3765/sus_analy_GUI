@@ -8,7 +8,7 @@ fprintf('=== 悬架分析GUI启动器 ===\n');
 try
     if exist('setup_paths', 'file') == 2
         setup_paths(false); % 非交互式运行，避免重复提示
-        fprintf('✓ 路径设置完成\n');
+        fprintf('✓ 路径设置完成\n'); 
     elseif exist('main', 'file') == 2
         main;
         fprintf('✓ 主程序初始化完成\n');

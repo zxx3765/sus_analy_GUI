@@ -129,18 +129,42 @@ function importFromWorkspace(~, ~, handles)
         var_name = workspace_vars{selection(i)};
         try
             data = evalin('base', var_name);
-            
-            % 验证数据格式
-            if isstruct(data) && isfield(data, 'tout')
+
+            % 验证数据格式 - 支持结构体(tout/time/t字段)和Simulink.SimulationOutput
+            is_valid = false;
+
+            if isstruct(data)
+                if isfield(data, 'tout')
+                    is_valid = true;
+                elseif isfield(data, 'time')
+                    data.tout = data.time;
+                    is_valid = true;
+                    gui_utils('addLog', handles, sprintf('  将 time 字段转换为 tout'));
+                elseif isfield(data, 't')
+                    data.tout = data.t;
+                    is_valid = true;
+                    gui_utils('addLog', handles, sprintf('  将 t 字段转换为 tout'));
+                end
+            elseif isa(data, 'Simulink.SimulationOutput')
+                gui_utils('addLog', handles, sprintf('  检测到Simulink.SimulationOutput，开始转换...'));
+                converted = convertSimulinkVariableForGUI(data, var_name, handles);
+                if ~isempty(converted)
+                    data = converted;
+                    is_valid = true;
+                end
+            end
+
+            if is_valid
                 handles.data{end+1} = data;
-                
-                % 生成友好的标签
                 label = generateDataLabel(var_name);
                 handles.labels{end+1} = label;
-                
-                gui_utils('addLog', handles, sprintf('已导入数据: %s', var_name));
+                gui_utils('addLog', handles, sprintf('✓ 已导入数据: %s', var_name));
             else
-                gui_utils('addLog', handles, sprintf('警告: %s 不是有效的仿真数据格式', var_name));
+                gui_utils('addLog', handles, sprintf('警告: %s 不是有效的仿真数据格式 (类型: %s)', var_name, class(data)));
+                % 显示结构体字段供参考
+                if isstruct(data)
+                    gui_utils('addLog', handles, sprintf('  现有字段: %s', strjoin(fieldnames(data), ', ')));
+                end
             end
         catch ME
             gui_utils('addLog', handles, sprintf('导入 %s 失败: %s', var_name, ME.message));
