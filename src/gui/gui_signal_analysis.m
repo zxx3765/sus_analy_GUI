@@ -103,25 +103,35 @@ function handles = gui_signal_analysis(parent, handles)
               'FontWeight', 'bold', ...
               'ForegroundColor', [0.80, 0.40, 0.10], ...
               'BackgroundColor', [0.98, 0.99, 0.98]);
-    
+
+    % ISO2631-1分析选项
+    handles.iso2631Check = uicontrol('Parent', signalPanel, ...
+                                     'Style', 'checkbox', ...
+                                     'Units', 'normalized', ...
+                                     'String', '📊 ISO2631-1加权RMS分析', ...
+                                     'Position', [0.03, 0.37, 0.58, 0.05], ...
+                                     'FontSize', 9, ...
+                                     'Value', 0, ...
+                                     'BackgroundColor', [0.98, 0.99, 0.98]);
+
     % 执行分析按钮 - 移到中间栏
     handles.runAnalysisBtn = uicontrol('Parent', signalPanel, ...
                                       'Style', 'pushbutton', ...
                                       'Units', 'normalized', ...
                                       'String', '🚀 开始分析', ...
-                                      'Position', [0.03, 0.33, 0.58, 0.09], ...
+                                      'Position', [0.03, 0.26, 0.58, 0.09], ...
                                       'FontSize', 12, ...
                                       'FontWeight', 'bold', ...
                                       'BackgroundColor', [0.10, 0.60, 0.10], ...
                                       'ForegroundColor', 'white', ...
                                       'Callback', {@runAnalysis, handles});
-    
+
     % 停止分析按钮
     handles.stopAnalysisBtn = uicontrol('Parent', signalPanel, ...
                                        'Style', 'pushbutton', ...
                                        'Units', 'normalized', ...
                                        'String', '⏹️ 停止', ...
-                                       'Position', [0.03, 0.26, 0.58, 0.07], ...
+                                       'Position', [0.03, 0.18, 0.58, 0.07], ...
                                        'FontSize', 10, ...
                                        'FontWeight', 'bold', ...
                                        'BackgroundColor', [0.80, 0.20, 0.20], ...
@@ -350,7 +360,21 @@ function runAnalysis(~, ~, handles)
 
         % 调用分析工具
         suspension_analysis_tool(handles.data, handles.labels, 'Config', custom_config);
-        
+
+        % 检查是否需要进行ISO2631-1分析
+        if isfield(handles, 'iso2631Check') && get(handles.iso2631Check, 'Value') == 1
+            updateProgressBar(handles, 0.9, '计算ISO2631-1加权RMS...');
+            gui_utils('addLog', handles, '开始ISO2631-1加权RMS分析...');
+
+            try
+                % 执行ISO2631-1分析
+                performISO2631Analysis(handles, custom_config);
+                gui_utils('addLog', handles, 'ISO2631-1分析完成');
+            catch ME
+                gui_utils('addLog', handles, sprintf('ISO2631-1分析失败: %s', ME.message));
+            end
+        end
+
         updateProgressBar(handles, 1.0, '分析完成');
         
         % 更新结果显示 — 使用本次分析的输出目录
@@ -565,4 +589,120 @@ if cond
 else
     out = b;
 end
+end
+
+%% 执行ISO2631-1加权RMS分析
+function performISO2631Analysis(handles, config)
+    gui_utils('addLog', handles, sprintf('ISO2631-1: 模型类型=%s', config.model_type));
+    gui_utils('addLog', handles, sprintf('ISO2631-1: 数据集数量=%d', length(handles.data)));
+
+    % 识别加速度信号
+    acc_signals = {};
+    acc_labels = {};
+    weighting_types = {};
+
+    for i = 1:length(handles.data)
+        data = handles.data{i};
+        gui_utils('addLog', handles, sprintf('ISO2631-1: 检查数据集%d，字段: %s', i, strjoin(fieldnames(data), ', ')));
+
+        % 根据模型类型提取加速度信号
+        switch lower(config.model_type)
+            case 'half'
+                if isfield(data, 'body_state_bus')
+                    acc_signals{end+1} = data.body_state_bus.signals.values(:, 3);
+                    acc_labels{end+1} = handles.labels{i};
+                    weighting_types{end+1} = 'Wk';
+                    gui_utils('addLog', handles, sprintf('ISO2631-1: 提取半车加速度信号%d', i));
+                end
+            case 'quarter'
+                if isfield(data, 'state_dot')
+                    % state_dot第2列是簧载质量加速度
+                    if isstruct(data.state_dot) && isfield(data.state_dot, 'signals')
+                        acc_signals{end+1} = data.state_dot.signals.values(:, 2);
+                    else
+                        acc_signals{end+1} = data.state_dot(:, 2);
+                    end
+                    acc_labels{end+1} = handles.labels{i};
+                    weighting_types{end+1} = 'Wk';
+                    gui_utils('addLog', handles, sprintf('ISO2631-1: 提取四分之一车加速度信号%d', i));
+                end
+            case 'full'
+                if isfield(data, 'body_bus')
+                    acc_signals{end+1} = data.body_bus.signals.values(:, 3);
+                    acc_labels{end+1} = handles.labels{i};
+                    weighting_types{end+1} = 'Wk';
+                    gui_utils('addLog', handles, sprintf('ISO2631-1: 提取整车加速度信号%d', i));
+                end
+        end
+    end
+
+    gui_utils('addLog', handles, sprintf('ISO2631-1: 找到%d个加速度信号', length(acc_signals)));
+
+    if isempty(acc_signals)
+        gui_utils('addLog', handles, 'ISO2631-1: 未找到加速度信号，分析终止');
+        return;
+    end
+
+    % 获取时间向量
+    if isfield(handles.data{1}, 'time')
+        time = handles.data{1}.time;
+    elseif isfield(handles.data{1}, 'tout')
+        time = handles.data{1}.tout;
+    else
+        gui_utils('addLog', handles, 'ISO2631-1: 未找到时间向量');
+        return;
+    end
+    sig_mat = zeros(length(time), length(acc_signals));
+    for i = 1:length(acc_signals)
+        sig_mat(:, i) = acc_signals{i};
+    end
+
+    % 应用自定义数据顺序
+    if isfield(config, 'data_order_list') && ~isempty(config.data_order_list)
+        order = config.data_order_list;
+        % 确保顺序索引有效
+        valid_idx = order(order <= length(acc_signals));
+        if ~isempty(valid_idx)
+            sig_mat = sig_mat(:, valid_idx);
+            acc_labels = acc_labels(valid_idx);
+            weighting_types = weighting_types(valid_idx);
+            gui_utils('addLog', handles, sprintf('ISO2631-1: 应用自定义顺序 [%s]', num2str(valid_idx)));
+        end
+    end
+
+    % 计算ISO2631-1加权RMS
+    [weighted_rms, original_rms] = calculate_weighted_rms_iso2631(sig_mat, time, weighting_types, config);
+
+    % 生成对比图（只显示加权RMS，内部处理保存）
+    fig = plot_weighted_rms_comparison_iso2631(weighted_rms, acc_labels, config);
+
+    % 保存数据到文件
+    results_file = fullfile(config.output_folder, 'ISO2631_results.txt');
+    fid = fopen(results_file, 'w');
+    fprintf(fid, 'ISO2631-1加权RMS分析结果\n');
+    fprintf(fid, '=========================\n\n');
+    for i = 1:length(acc_labels)
+        fprintf(fid, '%s:\n', acc_labels{i});
+        fprintf(fid, '  原始RMS: %.4f m/s²\n', original_rms(i));
+        fprintf(fid, '  加权RMS: %.4f m/s²\n', weighted_rms(i));
+        fprintf(fid, '  舒适度评价: %s\n\n', evaluateComfort(weighted_rms(i)));
+    end
+    fclose(fid);
+
+    gui_utils('addLog', handles, sprintf('ISO2631-1结果已保存: %s', results_file));
+end
+
+%% 舒适度评价
+function comfort_level = evaluateComfort(awrms)
+    if awrms < 0.315
+        comfort_level = '舒适';
+    elseif awrms < 0.63
+        comfort_level = '较舒适';
+    elseif awrms < 1.0
+        comfort_level = '不太舒适';
+    elseif awrms < 1.6
+        comfort_level = '不舒适';
+    else
+        comfort_level = '极不舒适';
+    end
 end
