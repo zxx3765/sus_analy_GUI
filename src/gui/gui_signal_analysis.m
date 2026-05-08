@@ -599,8 +599,6 @@ function performISO2631Analysis(handles, config)
     % 识别加速度信号
     acc_signals = {};
     acc_labels = {};
-    weighting_types = {};
-
     for i = 1:length(handles.data)
         data = handles.data{i};
         gui_utils('addLog', handles, sprintf('ISO2631-1: 检查数据集%d，字段: %s', i, strjoin(fieldnames(data), ', ')));
@@ -611,7 +609,6 @@ function performISO2631Analysis(handles, config)
                 if isfield(data, 'body_state_bus')
                     acc_signals{end+1} = data.body_state_bus.signals.values(:, 3);
                     acc_labels{end+1} = handles.labels{i};
-                    weighting_types{end+1} = 'Wk';
                     gui_utils('addLog', handles, sprintf('ISO2631-1: 提取半车加速度信号%d', i));
                 end
             case 'quarter'
@@ -623,14 +620,12 @@ function performISO2631Analysis(handles, config)
                         acc_signals{end+1} = data.state_dot(:, 2);
                     end
                     acc_labels{end+1} = handles.labels{i};
-                    weighting_types{end+1} = 'Wk';
                     gui_utils('addLog', handles, sprintf('ISO2631-1: 提取四分之一车加速度信号%d', i));
                 end
             case 'full'
                 if isfield(data, 'body_bus')
                     acc_signals{end+1} = data.body_bus.signals.values(:, 3);
                     acc_labels{end+1} = handles.labels{i};
-                    weighting_types{end+1} = 'Wk';
                     gui_utils('addLog', handles, sprintf('ISO2631-1: 提取整车加速度信号%d', i));
                 end
         end
@@ -665,13 +660,12 @@ function performISO2631Analysis(handles, config)
         if ~isempty(valid_idx)
             sig_mat = sig_mat(:, valid_idx);
             acc_labels = acc_labels(valid_idx);
-            weighting_types = weighting_types(valid_idx);
             gui_utils('addLog', handles, sprintf('ISO2631-1: 应用自定义顺序 [%s]', num2str(valid_idx)));
         end
     end
 
     % 计算ISO2631-1加权RMS
-    [weighted_rms, original_rms] = calculate_weighted_rms_iso2631(sig_mat, time, weighting_types, config);
+    [weighted_rms, original_rms] = calculate_weighted_rms_iso2631(sig_mat, time, config);
 
     % 生成对比图（只显示加权RMS，内部处理保存）
     fig = plot_weighted_rms_comparison_iso2631(weighted_rms, acc_labels, config);

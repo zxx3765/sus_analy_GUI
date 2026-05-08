@@ -26,8 +26,7 @@ labels = {'车身垂直加速度', '座椅垂直加速度'};
 config.language = 'cn';
 
 %% 3. 计算ISO2631-1加权RMS
-weighting_types = {'Wk', 'Wk'}; % 垂直方向使用Wk加权
-[weighted_rms, original_rms] = calculate_weighted_rms_iso2631(sig_mat, t, weighting_types, config);
+[weighted_rms, original_rms] = calculate_weighted_rms_iso2631(sig_mat, t, config);
 
 %% 4. 显示结果
 fprintf('\n========== ISO2631-1分析结果 ==========\n');
