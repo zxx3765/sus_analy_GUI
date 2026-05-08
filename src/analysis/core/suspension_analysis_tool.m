@@ -124,6 +124,12 @@ if isfield(config.analysis, 'peak_comparison') && config.analysis.peak_compariso
     perform_peak_analysis(processed_data, config);
 end
 
+% 6. 功率谱密度分析
+if isfield(config.analysis, 'psd') && config.analysis.psd
+    fprintf('  - 功率谱密度(PSD)分析\n');
+    perform_psd_analysis(processed_data, config);
+end
+
 fprintf('分析完成！\n');
 if config.save_plots
     fprintf('结果已保存至: %s\n', config.output_folder);
@@ -402,6 +408,30 @@ function plot_rms_comparison(rms_values, labels, signal_info, config)
 % RMS对比绘图实现 - 使用优化后的函数
 fprintf('  绘制RMS对比: %s\n', signal_info{1});
 [~, ~] = plot_rms_comparison_universal(rms_values, labels, signal_info, config);
+end
+
+%% PSD分析
+function perform_psd_analysis(processed_data, config)
+
+for i = 1:length(config.analysis_signals)
+    signal_info = config.analysis_signals{i};
+    signal_name = signal_info{1};
+    data_source = signal_info{2};
+    signal_idx = signal_info{3};
+
+    % 提取信号数据
+    signal_data = extract_signal_data(processed_data, data_source, signal_idx, config);
+
+    % 绘制PSD
+    plot_psd(signal_data, processed_data.labels, signal_info, config);
+end
+
+end
+
+function plot_psd(signal_data, labels, signal_info, config)
+% PSD绘图实现
+fprintf('  绘制功率谱密度: %s\n', signal_info{1});
+[PSD_matrix, f_freq] = plot_psd_universal(signal_data, labels, signal_info, config);
 end
 
 function display_statistical_summary(stats_results, labels, config)

@@ -236,7 +236,16 @@ function handles = gui_config_manager(parent, handles)
                                             'Value', 0, ...
                                             'FontSize', 9, ...
                                             'Callback', {@updateConfig, handles});
-    
+
+    % 新增：功率谱密度分析
+    handles.psdAnalysisCheck = uicontrol('Parent', configPanel, ...
+                                        'Style', 'checkbox', ...
+                                        'String', '功率谱密度(PSD)分析', ...
+                                        'Position', [200, y_pos, 150, 20], ...
+                                        'Value', 0, ...
+                                        'FontSize', 9, ...
+                                        'Callback', {@updateConfig, handles});
+
     %% 高级选项分组
     y_pos = y_pos - 60;
     uicontrol('Parent', configPanel, ...
@@ -361,7 +370,10 @@ function updateConfig(src, ~, handles)
         if isfield(handles, 'extremeAnalysisCheck')
             config.analysis.peak_comparison = logical(get(handles.extremeAnalysisCheck, 'Value'));
         end
-        
+        if isfield(handles, 'psdAnalysisCheck')
+            config.analysis.psd = logical(get(handles.psdAnalysisCheck, 'Value'));
+        end
+
         % 更新参考频率
         ref_freq_str = get(handles.refFreqEdit, 'String');
         try
@@ -602,6 +614,9 @@ function updateGUIFromConfig(handles)
         end
         if isfield(handles, 'extremeAnalysisCheck') && isfield(config.analysis, 'peak_comparison')
             set(handles.extremeAnalysisCheck, 'Value', config.analysis.peak_comparison);
+        end
+        if isfield(handles, 'psdAnalysisCheck') && isfield(config.analysis, 'psd')
+            set(handles.psdAnalysisCheck, 'Value', config.analysis.psd);
         end
     end
     

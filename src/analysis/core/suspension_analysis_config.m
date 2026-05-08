@@ -24,6 +24,7 @@ config.analysis.time_domain = true;          % 时域分析
 config.analysis.rms_comparison = true;       % RMS对比分析
 config.analysis.statistical = true;          % 统计分析
 config.analysis.peak_comparison = false;     % 峰值对比分析（柱形图），默认关闭（不区分正负）
+config.analysis.psd = false;                 % 功率谱密度(PSD)分析，默认关闭
 
 %% 绘图配置
 config.plot.line_width = 1.5;
