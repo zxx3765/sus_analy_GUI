@@ -363,7 +363,9 @@ for i = 1:n_datasets
     if field_exists
         data_matrix = dataset.(field_name);
         if size(data_matrix, 2) >= signal_idx
-            signal_data(:,i) = data_matrix(:, signal_idx);
+            % 截断到n_samples长度以处理长度不一致的数据
+            actual_length = min(size(data_matrix, 1), n_samples);
+            signal_data(1:actual_length, i) = data_matrix(1:actual_length, signal_idx);
         else
             warning('数据集 %d 中信号索引 %d 不存在', i, signal_idx);
         end

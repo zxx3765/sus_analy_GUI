@@ -649,7 +649,9 @@ function performISO2631Analysis(handles, config)
     end
     sig_mat = zeros(length(time), length(acc_signals));
     for i = 1:length(acc_signals)
-        sig_mat(:, i) = acc_signals{i};
+        % 截断到统一长度以处理长度不一致的数据
+        actual_length = min(length(acc_signals{i}), length(time));
+        sig_mat(1:actual_length, i) = acc_signals{i}(1:actual_length);
     end
 
     % 应用自定义数据顺序

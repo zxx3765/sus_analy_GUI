@@ -130,7 +130,7 @@ function importFromWorkspace(~, ~, handles)
         try
             data = evalin('base', var_name);
 
-            % 验证数据格式 - 支持结构体(tout/time/t字段)和Simulink.SimulationOutput
+            % 验证数据格式 - 支持结构体(tout/time/t字段)、Simulink.SimulationOutput和实验数据
             is_valid = false;
 
             if isstruct(data)
@@ -144,6 +144,13 @@ function importFromWorkspace(~, ~, handles)
                     data.tout = data.t;
                     is_valid = true;
                     gui_utils('addLog', handles, sprintf('  将 t 字段转换为 tout'));
+                elseif is_experimental_data(data)
+                    gui_utils('addLog', handles, sprintf('  检测到实验数据格式，开始转换...'));
+                    converted = convert_experimental_data(data, var_name);
+                    if ~isempty(converted)
+                        data = converted;
+                        is_valid = true;
+                    end
                 end
             elseif isa(data, 'Simulink.SimulationOutput')
                 gui_utils('addLog', handles, sprintf('  检测到Simulink.SimulationOutput，开始转换...'));
@@ -204,10 +211,11 @@ function importFromFile(~, ~, handles)
         try
             filepath = fullfile(pathname, filename{i});
             loaded_data = load(filepath);
-            
+
             % 查找有效的仿真数据
             field_names = fieldnames(loaded_data);
             found_data = false;
+            imported_count = 0;  % 记录实际导入的数据集数量
             
             % 首先查找所有以'out'开头的变量
             out_variables = {};
@@ -311,6 +319,7 @@ function importFromFile(~, ~, handles)
                     handles.labels{end+1} = label;
 
                     found_data = true;
+                    imported_count = imported_count + 1;
                     gui_utils('addLog', handles, sprintf('✓ 从 %s 导入: %s', filename{i}, field_name));
                     gui_utils('addLog', handles, sprintf('  数据信息: %s', validation_info));
                 else
@@ -330,6 +339,7 @@ function importFromFile(~, ~, handles)
                         handles.labels{end+1} = label;
 
                         found_data = true;
+                        imported_count = imported_count + 1;
                         gui_utils('addLog', handles, sprintf('✓ 转换成功并导入: %s.%s', filename{i}, field_name));
                     else
                         gui_utils('addLog', handles, sprintf('✗ 转换失败，跳过 %s.%s: %s', filename{i}, field_name, validation_info));
@@ -345,10 +355,7 @@ function importFromFile(~, ~, handles)
                     gui_utils('addLog', handles, sprintf('文件包含变量: %s', var_list));
                 end
             else
-                gui_utils('addLog', handles, sprintf('成功从 %s 导入了 %d 个数据集', filename{i}, ...
-                       sum(arrayfun(@(k) startsWith(lower(field_names{k}), 'out') || ...
-                           (isstruct(loaded_data.(field_names{k})) && ...
-                            isfield(loaded_data.(field_names{k}), 'tout')), 1:length(field_names)))));
+                gui_utils('addLog', handles, sprintf('成功从 %s 导入了 %d 个数据集', filename{i}, imported_count));
             end
             
         catch ME
@@ -539,6 +546,13 @@ function converted_data = attemptDataConversion(field_data, field_name, handles)
         if isa(field_data, 'Simulink.SimulationOutput')
             gui_utils('addLog', handles, sprintf('  检测到Simulink.SimulationOutput，开始转换...'));
             converted_data = convertSimulinkVariableForGUI(field_data, field_name, handles);
+        % 检查是否是实验数据格式
+        elseif is_experimental_data(field_data)
+            gui_utils('addLog', handles, sprintf('  检测到实验数据格式，开始转换...'));
+            converted_data = convert_experimental_data(field_data, field_name);
+            if ~isempty(converted_data)
+                gui_utils('addLog', handles, sprintf('  ✓ 实验数据转换成功'));
+            end
         else
             gui_utils('addLog', handles, sprintf('  数据类型 %s 不支持自动转换', class(field_data)));
         end
