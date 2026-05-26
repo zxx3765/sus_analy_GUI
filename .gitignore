@@ -107,3 +107,6 @@ dist/
 # Claude AI相关（如果项目使用Claude AI）
 .claude/
 CLAUDE.md
+
+HILData/
+analysis_GUI/*

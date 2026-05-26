@@ -66,6 +66,9 @@ function handles = createMainLayout(handles)
     
     % 数据顺序设置选项卡
     orderTab = uitab(middleTabGroup, 'Title', '📈 数据顺序');
+
+    % 数据处理选项卡
+    processingTab = uitab(middleTabGroup, 'Title', '⚙️ 数据处理');
     
     % 右侧面板 - 分析和结果 (增加宽度)
     rightPanel = uipanel('Parent', fig, ...
@@ -80,6 +83,7 @@ function handles = createMainLayout(handles)
     handles = gui_config_manager(leftPanel, handles);
     handles = gui_signal_analysis(signalTab, handles);
     handles = gui_simple_data_order(orderTab, handles);  % 简化的数据顺序设置
+    handles = gui_data_processing(processingTab, handles);
     handles = gui_log_viewer(rightPanel, handles);
     handles = gui_results_viewer(rightPanel, handles);
     

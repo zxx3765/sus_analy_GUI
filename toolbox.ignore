@@ -31,5 +31,10 @@ resources
 **/.buildtool/**/*
 **/*.asv
 .git/*
-results/*
+results/**/*
+HILData/**/*
 .claude/*
+!tools/is_experimental_data.m
+analysis_GUI/**/*
+templates/**/*
+slprj/**/*
