@@ -124,6 +124,7 @@ config.data_fields.reward = 'reward';       % 奖励数据 [5001×1]
 config.data_fields.road_derivative = 'd_xr'; % 路面输入导数 [5001×1]
 config.data_fields.velocity_def = 'v_def';  % 速度缺陷 [5001×1]
 config.data_fields.x_def = 'x_def';  
+config.data_fields.control_force = 'F_cmd'; % 控制力 [5001×1]
 
 % 状态导数信号索引映射 (基于state_dot [5001×4])
 config.signals.signal_1 = 1;                % 第1个状态导数信号
@@ -144,6 +145,7 @@ config.road.input = 1;                      % 路面输入索引
 config.reward.total = 1;                    % 总奖励索引
 config.road_derivative.input = 1;           % 路面输入导数索引
 config.velocity_def.value = 1;              % 速度缺陷索引
+config.control_force.value = 1;             % 控制力索引
 config.states.susp_def = 1;                 % 悬架变形
 % 分析信号配置 - 根据实际数据结构
 config.analysis_signals = {
@@ -161,6 +163,7 @@ config.analysis_signals = {
     {'reward', 'reward', config.reward.total, '奖励信号', 'Reward Signal', ''};
     {'road_input', 'road_input', config.road.input, '路面输入', 'Road Input', 'm'};
     {'velocity_def', 'velocity_def', config.velocity_def.value, '速度缺陷', 'Velocity Defect', 'm/s'};
+    {'control_force', 'control_force', config.control_force.value, '控制力', 'Control Force', 'N'};
 };
 
 end
