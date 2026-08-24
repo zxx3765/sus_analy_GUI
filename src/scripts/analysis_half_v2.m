@@ -57,6 +57,7 @@ REFERENCE_FREQUENCIES = [1, 10];   % 参考频率线 (Hz)
 ENABLE_FREQUENCY_ANALYSIS = true;   % 频率分析
 ENABLE_TIME_ANALYSIS = true;        % 时域分析  
 ENABLE_RMS_ANALYSIS = true;         % RMS对比分析
+ENABLE_BAND_RMS_ANALYSIS = false;   % 频带RMS对比分析（B1/B2/B3）
 ENABLE_STATISTICAL_ANALYSIS = true; % 统计分析
 
 %% 创建配置
@@ -75,6 +76,7 @@ config.plot.reference_lines = REFERENCE_FREQUENCIES;
 config.analysis.frequency_response = ENABLE_FREQUENCY_ANALYSIS;
 config.analysis.time_domain = ENABLE_TIME_ANALYSIS;
 config.analysis.rms_comparison = ENABLE_RMS_ANALYSIS;
+config.analysis.band_rms = ENABLE_BAND_RMS_ANALYSIS;
 config.analysis.statistical = ENABLE_STATISTICAL_ANALYSIS;
 
 % 绘图设置优化

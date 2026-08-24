@@ -22,6 +22,7 @@ config.output_folder = 'results';   % 默认基础文件夹 (会被quick_config�
 config.analysis.frequency_response = true;   % 频率响应分析
 config.analysis.time_domain = true;          % 时域分析
 config.analysis.rms_comparison = true;       % RMS对比分析
+config.analysis.band_rms = false;            % 频带RMS对比分析，默认关闭
 config.analysis.statistical = true;          % 统计分析
 config.analysis.peak_comparison = false;     % 峰值对比分析（柱形图），默认关闭（不区分正负）
 config.analysis.psd = false;                 % 功率谱密度(PSD)分析，默认关闭
@@ -38,6 +39,18 @@ config.plot.legend_position = 'auto';   % 图例位置: 'auto' 或具体位置�
 config.plot.legend_show = true;         % 是否显示图例
 config.plot.legend_font_size = [];      % 图例字体大小，空则使用默认
 config.plot.custom_labels = {};         % 自定义标签映射，格式: {'原标签1', '新标签1'; '原标签2', '新标签2'}
+
+%% 频带RMS配置
+config.band_rms.names = {'B1', 'B2', 'B3'};
+config.band_rms.ranges_hz = [0.5, 2; 2, 8; 8, 20];
+config.band_rms.method = 'welch';
+config.band_rms.detrend = 'constant';
+config.band_rms.segment_duration_seconds = 20;
+config.band_rms.overlap_ratio = 0.5;
+config.band_rms.time_uniformity_tolerance = 1e-3;
+config.band_rms.minimum_low_band_cycles = 3;
+% 相对百分比始终以最终绘图顺序中的第一个数据集为100%
+config.band_rms.show_relative_labels = true;
 
 %% 语言配置 ('cn' 或 'en')
 config.language = 'cn';

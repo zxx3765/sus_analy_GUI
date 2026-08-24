@@ -8,7 +8,7 @@ function export_plot_data(plot_data, signal_info, labels, config, plot_type)
 %   signal_info: 信号信息 {name, source, index, cn_label, en_label, unit}
 %   labels: 数据标签
 %   config: 配置结构体
-%   plot_type: 绘图类型 ('frequency', 'time', 'rms', 'peak', 'stat')
+%   plot_type: 绘图类型 ('frequency', 'time', 'rms', 'band_rms', 'peak', 'stat')
 
 % 检查是否需要导出数据
 if ~config.save_to_workspace && ~config.save_mat_files
@@ -87,6 +87,21 @@ switch lower(plot_type)
             if isfield(plot_data, 'relative_percentages')
                 rel_matrix = plot_data.relative_percentages(:);
                 export_to_origin_format(rel_matrix, clean_labels', clean_signal_name, 'rms_rel', config, true);
+            end
+        end
+
+    case 'band_rms'
+        % 频带RMS数据: 行为数据集，列为频带
+        if isfield(plot_data, 'band_rms_values') && ...
+                isfield(plot_data, 'band_names')
+            band_names = plot_data.band_names;
+            export_to_origin_format(plot_data.band_rms_values, band_names, ...
+                clean_signal_name, 'band_rms_abs', config, false, clean_labels);
+
+            if isfield(plot_data, 'relative_percentages')
+                export_to_origin_format(plot_data.relative_percentages, ...
+                    band_names, clean_signal_name, 'band_rms_rel', ...
+                    config, false, clean_labels);
             end
         end
 

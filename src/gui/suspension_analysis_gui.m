@@ -34,6 +34,11 @@ try
         'gui_signal_analysis.m',
         'gui_log_viewer.m',
         'gui_results_viewer.m',
+        'gui_batch_execution.m',
+        'batch_algorithm_config_utils.m',
+        'batch_model_file_utils.m',
+        'gui_theme.m',
+        'gui_apply_theme.m',
         'gui_utils.m'
     };
     

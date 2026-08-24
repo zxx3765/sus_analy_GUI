@@ -30,6 +30,8 @@ try
         'suspension_analysis_gui';
         'convert_simulink_output';
         'calculate_rms_universal';
+        'calculate_band_rms_universal';
+        'plot_band_rms_comparison_universal';
         'plot_extreme_comparison_universal';
     };
     

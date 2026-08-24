@@ -25,6 +25,8 @@ function config = quick_config(varargin)
 %     'UseTimestamp': 是否使用时间戳文件夹 (true/false)
 %     'PlotFormat': 图片格式 ('png', 'eps', 'pdf')
 %     'RefFreq': 参考频率数组 [freq1, freq2, ...]
+%     'EnableBandRMS': 是否启用频带RMS分析
+%     'BandRMSRanges': 频带范围矩阵 [low1 high1; low2 high2; ...]
 %     'FontSize': 字体大小
 %     'LineWidth': 线宽
 %     'FigSize': 图形尺寸 [width, height]
@@ -41,6 +43,8 @@ defaults.output_folder = '';  % 空字符串表示自动生成时间戳文件夹
 defaults.use_timestamp = true;  % 默认使用时间戳文件夹
 defaults.plot_format = 'png';
 defaults.ref_freq = [];
+defaults.enable_band_rms = false;
+defaults.band_rms_ranges = [0.5, 2; 2, 8; 8, 20];
 defaults.font_size = 12;
 defaults.line_width = 1.5;
 defaults.fig_size = [800, 600];
@@ -52,7 +56,7 @@ params = defaults;
 is_positional = true;
 if nargin > 0
     % 如果任何参数是名称-值对的名称，则为名称-值模式
-    name_value_names = {'ModelType', 'Language', 'SavePlots', 'SaveFigFiles', 'CloseFigures', 'SaveToWorkspace', 'SaveMatFiles', 'OutputFolder', 'UseTimestamp', 'PlotFormat', 'RefFreq', 'FontSize', 'LineWidth', 'FigSize'};
+    name_value_names = {'ModelType', 'Language', 'SavePlots', 'SaveFigFiles', 'CloseFigures', 'SaveToWorkspace', 'SaveMatFiles', 'OutputFolder', 'UseTimestamp', 'PlotFormat', 'RefFreq', 'EnableBandRMS', 'BandRMSRanges', 'FontSize', 'LineWidth', 'FigSize'};
     
     for i = 1:nargin
         if ischar(varargin{i}) || isstring(varargin{i})
@@ -94,6 +98,9 @@ else
     addParameter(p, 'UseTimestamp', defaults.use_timestamp, @islogical);
     addParameter(p, 'PlotFormat', defaults.plot_format, @(x) any(validatestring(x, {'png', 'eps', 'pdf'})));
     addParameter(p, 'RefFreq', defaults.ref_freq, @isnumeric);
+    addParameter(p, 'EnableBandRMS', defaults.enable_band_rms, @islogical);
+    addParameter(p, 'BandRMSRanges', defaults.band_rms_ranges, ...
+        @(x) isnumeric(x) && size(x, 2) == 2 && ~isempty(x));
     addParameter(p, 'FontSize', defaults.font_size, @isnumeric);
     addParameter(p, 'LineWidth', defaults.line_width, @isnumeric);
     addParameter(p, 'FigSize', defaults.fig_size, @isnumeric);
@@ -111,6 +118,8 @@ else
     params.use_timestamp = p.Results.UseTimestamp;
     params.plot_format = p.Results.PlotFormat;
     params.ref_freq = p.Results.RefFreq;
+    params.enable_band_rms = p.Results.EnableBandRMS;
+    params.band_rms_ranges = p.Results.BandRMSRanges;
     params.font_size = p.Results.FontSize;
     params.line_width = p.Results.LineWidth;
     params.fig_size = p.Results.FigSize;
@@ -127,6 +136,10 @@ config.close_figures = params.close_figures;
 config.save_to_workspace = params.save_to_workspace;
 config.save_mat_files = params.save_mat_files;
 config.plot_format = params.plot_format;
+config.analysis.band_rms = params.enable_band_rms;
+config.band_rms.ranges_hz = params.band_rms_ranges;
+config.band_rms.names = arrayfun(@(index) sprintf('B%d', index), ...
+    1:size(params.band_rms_ranges, 1), 'UniformOutput', false);
 
 % 处理输出文件夹设置
 if params.use_timestamp || isempty(params.output_folder)

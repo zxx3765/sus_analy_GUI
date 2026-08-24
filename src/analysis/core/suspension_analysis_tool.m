@@ -112,19 +112,25 @@ if config.analysis.rms_comparison
     perform_rms_analysis(processed_data, config);
 end
 
-% 4. 统计分析
+% 4. 频带RMS对比分析
+if isfield(config.analysis, 'band_rms') && config.analysis.band_rms
+    fprintf('  - 频带RMS对比分析\n');
+    perform_band_rms_analysis(processed_data, time_vector, config);
+end
+
+% 5. 统计分析
 if config.analysis.statistical
     fprintf('  - 统计分析\n');
     perform_statistical_analysis(processed_data, config);
 end
 
-% 5. 峰值对比分析
+% 6. 峰值对比分析
 if isfield(config.analysis, 'peak_comparison') && config.analysis.peak_comparison
     fprintf('  - 峰值对比分析\n');
     perform_peak_analysis(processed_data, config);
 end
 
-% 6. 功率谱密度分析
+% 7. 功率谱密度分析
 if isfield(config.analysis, 'psd') && config.analysis.psd
     fprintf('  - 功率谱密度(PSD)分析\n');
     perform_psd_analysis(processed_data, config);
@@ -273,6 +279,107 @@ end
 
 end
 
+%% 频带RMS分析
+function perform_band_rms_analysis(processed_data, time_vector, config)
+
+validate_band_rms_time_bases(processed_data, time_vector, config);
+
+band_rms_results = struct();
+n_signals = length(config.analysis_signals);
+summary_tables = cell(n_signals, 1);
+
+for i = 1:n_signals
+    signal_info = config.analysis_signals{i};
+    signal_name = signal_info{1};
+    data_source = signal_info{2};
+    signal_idx = signal_info{3};
+
+    % 频域计算不允许缺失样本后补零，因此使用严格长度检查。
+    signal_data = extract_signal_data(processed_data, data_source, ...
+        signal_idx, config, true);
+
+    [band_rms_values, relative_percentages, band_power_values, metadata] = ...
+        calculate_band_rms_universal(signal_data, time_vector, ...
+        processed_data.labels, config);
+
+    signal_result = struct();
+    signal_result.band_rms = band_rms_values;
+    signal_result.band_power = band_power_values;
+    signal_result.relative_percentages = relative_percentages;
+    signal_result.reduction_percentages = 100 - relative_percentages;
+    signal_result.unit = signal_info{6};
+    band_rms_results.signals.(signal_name) = signal_result;
+
+    summary_tables{i} = create_band_rms_summary_table(signal_info, ...
+        processed_data.labels, band_rms_values, relative_percentages, metadata);
+
+    plot_band_rms_comparison_universal(band_rms_values, ...
+        relative_percentages, processed_data.labels, signal_info, ...
+        metadata, config);
+end
+
+band_rms_results.metadata = metadata;
+band_rms_results.summary_table = vertcat(summary_tables{:});
+
+if isfield(config, 'save_to_workspace') && config.save_to_workspace
+    assignin('base', 'band_rms_results', band_rms_results);
+end
+
+if config.save_plots
+    mat_path = fullfile(config.output_folder, 'band_rms_results.mat');
+    csv_path = fullfile(config.output_folder, 'band_rms_results.csv');
+    save(mat_path, 'band_rms_results');
+    writetable(band_rms_results.summary_table, csv_path);
+end
+
+end
+
+function validate_band_rms_time_bases(processed_data, reference_time, config)
+time_field = config.data_fields.time;
+reference_time = reference_time(:);
+sample_interval = median(diff(reference_time));
+time_tolerance = config.band_rms.time_uniformity_tolerance * sample_interval;
+
+for dataset_index = 1:processed_data.n_datasets
+    dataset_time = processed_data.datasets{dataset_index}.(time_field);
+    dataset_time = dataset_time(:);
+    if numel(dataset_time) ~= numel(reference_time)
+        error('suspension_analysis_tool:BandRMSTimeLengthMismatch', ...
+            '数据集%d的时间长度与基准数据集不一致，无法计算频带RMS。', ...
+            dataset_index);
+    end
+    if max(abs(dataset_time - reference_time)) > time_tolerance
+        error('suspension_analysis_tool:BandRMSTimeMismatch', ...
+            '数据集%d的时间采样点与基准数据集不一致，初版频带RMS不自动重采样。', ...
+            dataset_index);
+    end
+end
+end
+
+function summary_table = create_band_rms_summary_table(signal_info, ...
+    dataset_labels, band_rms_values, relative_percentages, metadata)
+n_datasets = size(band_rms_values, 1);
+n_bands = size(band_rms_values, 2);
+n_rows = n_datasets * n_bands;
+
+signal_column = repmat({signal_info{1}}, n_rows, 1);
+signal_label_column = repmat({signal_info{4}}, n_rows, 1);
+unit_column = repmat({signal_info{6}}, n_rows, 1);
+dataset_column = repelem(dataset_labels(:), n_bands, 1);
+band_column = repmat(metadata.band_names(:), n_datasets, 1);
+low_hz = repmat(metadata.ranges_hz(:, 1), n_datasets, 1);
+high_hz = repmat(metadata.ranges_hz(:, 2), n_datasets, 1);
+band_rms_column = reshape(band_rms_values.', [], 1);
+relative_column = reshape(relative_percentages.', [], 1);
+reduction_column = 100 - relative_column;
+
+summary_table = table(signal_column, signal_label_column, dataset_column, ...
+    band_column, low_hz, high_hz, unit_column, band_rms_column, ...
+    relative_column, reduction_column, 'VariableNames', ...
+    {'Signal', 'SignalLabel', 'Dataset', 'Band', 'LowHz', 'HighHz', ...
+     'Unit', 'BandRMS', 'RelativePercent', 'ReductionPercent'});
+end
+
 %% 统计分析
 function perform_statistical_analysis(processed_data, config)
 
@@ -342,7 +449,11 @@ end
 end
 
 %% 辅助函数：提取信号数据
-function signal_data = extract_signal_data(processed_data, data_source, signal_idx, config)
+function signal_data = extract_signal_data(processed_data, data_source, signal_idx, config, strict_length)
+
+if nargin < 5
+    strict_length = false;
+end
 
 field_name = config.data_fields.(data_source);
 n_samples = processed_data.n_samples;
@@ -363,14 +474,30 @@ for i = 1:n_datasets
     if field_exists
         data_matrix = dataset.(field_name);
         if size(data_matrix, 2) >= signal_idx
+            if strict_length && size(data_matrix, 1) ~= n_samples
+                error('suspension_analysis_tool:BandRMSSignalLengthMismatch', ...
+                    ['数据集%d的字段%s包含%d个样本，期望%d个；' ...
+                     '频带RMS不会对缺失样本补零。'], ...
+                    i, field_name, size(data_matrix, 1), n_samples);
+            end
             % 截断到n_samples长度以处理长度不一致的数据
             actual_length = min(size(data_matrix, 1), n_samples);
             signal_data(1:actual_length, i) = data_matrix(1:actual_length, signal_idx);
         else
-            warning('数据集 %d 中信号索引 %d 不存在', i, signal_idx);
+            if strict_length
+                error('suspension_analysis_tool:BandRMSSignalMissing', ...
+                    '数据集%d中信号索引%d不存在。', i, signal_idx);
+            else
+                warning('数据集 %d 中信号索引 %d 不存在', i, signal_idx);
+            end
         end
     else
-        warning('数据集 %d 中未找到字段: %s', i, field_name);
+        if strict_length
+            error('suspension_analysis_tool:BandRMSFieldMissing', ...
+                '数据集%d中未找到字段: %s。', i, field_name);
+        else
+            warning('数据集 %d 中未找到字段: %s', i, field_name);
+        end
     end
 end
 
