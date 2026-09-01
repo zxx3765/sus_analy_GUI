@@ -39,7 +39,11 @@ try
         'batch_model_file_utils.m',
         'gui_theme.m',
         'gui_apply_theme.m',
-        'gui_utils.m'
+        'gui_utils.m',
+        'gui_fdei_analysis.m',
+        'fdei_default_config.m',
+        'fdei_analyze_runs.m',
+        'fdei_plot_figures12.m'
     };
     
     missing_files = {};

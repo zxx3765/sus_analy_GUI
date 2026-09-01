@@ -22,6 +22,7 @@ paths_to_add = {
     project_root;                                    % 根目录
     fullfile(project_root, 'src', 'models');        % 模型文件
     fullfile(project_root, 'src', 'analysis', 'core');      % 核心分析工具
+    fullfile(project_root, 'src', 'analysis', 'fdei');      % FDEI批量与验证核心
     fullfile(project_root, 'src', 'analysis', 'plotting');  % 绘图函数
     fullfile(project_root, 'src', 'analysis', 'legacy');    % 原有绘图函数
     fullfile(project_root, 'src', 'scripts');       % 用户脚本

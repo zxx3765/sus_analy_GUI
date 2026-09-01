@@ -29,6 +29,7 @@ catch ME
     paths_to_try = {
         fullfile(pwd, 'src', 'gui');
         fullfile(pwd, 'src', 'analysis', 'core');
+        fullfile(pwd, 'src', 'analysis', 'fdei');
         fullfile(pwd, 'src', 'analysis', 'plotting');
     };
     
@@ -46,7 +47,9 @@ fprintf('检查依赖项...\n');
 required_functions = {'quick_config', 'suspension_analysis_tool', ...
     'suspension_analysis_config', 'calculate_band_rms_universal', ...
     'plot_band_rms_comparison_universal', 'gui_batch_execution', ...
-    'batch_algorithm_config_utils', 'batch_model_file_utils'};
+    'batch_algorithm_config_utils', 'batch_model_file_utils', ...
+    'gui_fdei_analysis', 'fdei_default_config', 'fdei_analyze_runs', ...
+    'fdei_plot_figures12', 'fdei_run_batch'};
 missing_functions = {};
 
 for i = 1:length(required_functions)

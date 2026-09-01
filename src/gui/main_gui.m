@@ -65,9 +65,12 @@ function handles = createMainLayout(handles)
                          'BackgroundColor', theme.canvas);
     batchPage = uitab(mainTabGroup, 'Title', '批量执行页面', ...
                       'BackgroundColor', theme.canvas);
+    fdeiPage = uitab(mainTabGroup, 'Title', 'FDEI 分析', ...
+                     'BackgroundColor', theme.canvas);
     handles.mainTabGroup = mainTabGroup;
     handles.analysisPage = analysisPage;
     handles.batchPage = batchPage;
+    handles.fdeiPage = fdeiPage;
     
     %% 分析页面标题区
     analysisHeader = uipanel('Parent', analysisPage, ...
@@ -167,6 +170,9 @@ function handles = createMainLayout(handles)
     % 批量执行页面。该模块自行管理批量页面状态，但仍将状态保存到
     % figure.UserData，确保与已有模块的回调取值方式一致。
     handles = gui_batch_execution(batchContent, handles);
+
+    %% FDEI 分析页面：批量仿真与分析绘图两个子页
+    handles = gui_fdei_analysis(fdeiPage, handles);
     
     % 初始刷新一次“数据顺序”下拉（若存在数据则显示全部项）
     try
